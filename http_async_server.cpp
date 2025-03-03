@@ -29,9 +29,7 @@ private:
         // читаем запрос из сокета и передаём в реквест
         http::async_read(
             socket_, buffer_, req_,
-            [self](
-                boost::system::error_code ec, std::size_t bytes_transferred
-            ) {
+            [self](const boost::system::error_code ec, std::size_t) {
                 if (ec) {
                     std::cerr << "Error reading HTTP request: " << ec.message()
                               << '\n';
@@ -43,26 +41,27 @@ private:
     }
 
     void handle_request() {
-        std::string body = "Recieved: " + req_.body();
+        const std::string body = "Received: " + req_.body();
 
         // формирование HTTP-ответа
         // 200 OK - запрос успешно обработан и принят
-        http::response<http::string_body> res{http::status::ok, req_.version()};
-        res.set(http::field::server, "server");
+        auto res = std::make_shared<http::response<http::string_body>>(
+            http::status::ok, req_.version()
+        );
+
+        res->set(http::field::server, "server");
         // в ответе просто текст
-        res.set(http::field::content_type, "text/plain");
-        res.body() = body;
+        res->set(http::field::content_type, "text/plain");
+        res->body() = body;
         // доставляет недостающие заголовки
-        res.prepare_payload();
-                // начинаем сессию для нового подключения
+        res->prepare_payload();
+        // начинаем сессию для нового подключения
 
         // гарантируем, что объект не умрёт до завершения запроса
         auto self = shared_from_this();
         http::async_write(
-            socket_, res,
-            [self](
-                boost::system::error_code ec, std::size_t bytes_transferred
-            ) {
+            socket_, *res,
+            [self, res](boost::system::error_code ec, std::size_t) {
                 // завершаем соединение
                 self->socket_.shutdown(tcp::socket::shutdown_send, ec);
             }
@@ -73,12 +72,15 @@ private:
 // Класс HTTP сервера для прослушивания входящих подключений
 class HttpServer : public std::enable_shared_from_this<HttpServer> {
 private:
+    boost::asio::io_context &io_context_;
     tcp::acceptor acceptor_;
-    tcp::socket socket_;
 
 public:
-    HttpServer(boost::asio::io_context &io_context, tcp::endpoint endpoint)
-        : acceptor_(io_context), socket_(io_context) {
+    HttpServer(
+        boost::asio::io_context &io_context,
+        const tcp::endpoint &endpoint
+    )
+        : io_context_(io_context), acceptor_(io_context) {
         boost::system::error_code ec;
         acceptor_.open(endpoint.protocol(), ec);
         if (ec) {
@@ -104,26 +106,30 @@ public:
 
 private:
     void do_accept() {
-        auto self = shared_from_this();
-        acceptor_.async_accept(socket_, [self](boost::system::error_code ec) {
-            if (ec) {
-                std::cerr << "Error in accept: " << ec.message() << '\n';
-            } else {
-                try {
-                    std::cout << "Accepted connection from "
-                              << self->socket_.remote_endpoint() << " --> "
-                              << self->socket_.local_endpoint() << '\n';
-                } catch (const std::exception &e) {
-                    std::cerr << "Error retrieving endpoints: " << e.what()
-                              << '\n';
+        auto new_socket = std::make_shared<tcp::socket>(io_context_);
+
+        acceptor_.async_accept(
+            *new_socket,
+            [this, new_socket](const boost::system::error_code ec) {
+                if (ec) {
+                    std::cerr << "Error in accept: " << ec.message() << '\n';
+                } else {
+                    try {
+                        std::cout << "Accepted connection from "
+                                  << new_socket->remote_endpoint() << " --> "
+                                  << new_socket->local_endpoint() << '\n';
+                    } catch (const std::exception &e) {
+                        std::cerr << "Error retrieving endpoints: " << e.what()
+                                  << '\n';
+                    }
+                    // начинаем сессию для нового подключения
+                    std::make_shared<HttpSession>(std::move(*new_socket))
+                        ->start();
                 }
-                // начинаем сессию для нового подключения
-                std::make_shared<HttpSession>(std::move(self->socket_))
-                    ->start();
+                // продолжаем принимать новые подключения
+                this->do_accept();
             }
-            // продолжаем принимать новые подключения
-            self->do_accept();
-        });
+        );
     }
 };
 
