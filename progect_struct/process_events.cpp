@@ -10,14 +10,22 @@ enum class Event {
 
 
 int main() {
+    
+
     DecRec current_session;
     Event x = Event::Add;
+    
+    
     swich(x) {
         case Event::Add {
-            // some logic 
-            DBManager::add(/* some args*/);
-            // some logic
+            DecRep::add();
         } break;
-        case 
+        case Event::Add {
+            DecRep::add();
+        } break;
+        case Event::Add {
+            DecRep::add();
+        } break;
+        // ...
     }
 }
