@@ -7,18 +7,15 @@
 
 struct Node {
     std::string path{};
-    
 };
 
 struct File : Node {};
 
 struct Directory : Node {
-    std::set<File> children;
+    std::set<Node&> children;
 };
 
 struct DecRepFS {
-    std::set<File> files;
-
     void find_file() const {
     }
 };
