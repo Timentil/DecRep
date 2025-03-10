@@ -12,12 +12,15 @@ struct Node {
 struct File : Node {};
 
 struct Directory : Node {
-    std::set<Node&> children;
+    std::set<Node*> children;
+    Node *parent;
 };
 
 struct DecRepFS {
     void find_file() const {
     }
 };
+
+// DecRep/1/2/3;
 
 #endif  // DEC_REP_FS_HPP_

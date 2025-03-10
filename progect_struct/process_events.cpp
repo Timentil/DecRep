@@ -1,31 +1,12 @@
-#include "events.cpp"
-
-namespace {
-enum class Event {
-    Add, 
-    DeL
-    // ...
-}
-}; 
+#include "db_manager.cpp"
 
 
-int main() {
-    
-
-    DecRec current_session;
-    Event x = Event::Add;
-    
-    
-    swich(x) {
-        case Event::Add {
-            DecRep::add();
-        } break;
-        case Event::Add {
-            DecRep::add();
-        } break;
-        case Event::Add {
-            DecRep::add();
-        } break;
-        // ...
+class Events {
+    void add(d) {
+        // d.fs -> HTTP client
+        DBManager::add();
+        // d.fs
     }
-}
+    void del() {}
+    void download() {}
+};
