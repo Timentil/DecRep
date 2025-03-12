@@ -7,20 +7,20 @@
 
 struct Node {
     std::string path{};
+    
 };
 
 struct File : Node {};
 
 struct Directory : Node {
-    std::set<Node*> children;
-    Node *parent;
+    std::set<File> children;
 };
 
 struct DecRepFS {
+    std::set<File> files;
+
     void find_file() const {
     }
 };
-
-// DecRep/1/2/3;
 
 #endif  // DEC_REP_FS_HPP_
