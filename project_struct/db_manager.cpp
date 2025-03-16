@@ -1,6 +1,4 @@
-#include <chrono>
 #include <filesystem>
-#include <iomanip>
 #include <iostream>
 #include <pqxx/pqxx>
 
@@ -66,15 +64,7 @@ void add_file_template(
     if (fs::is_regular_file(p)) {
         std::string file_name = p.filename().string();
         std::size_t file_size = fs::file_size(p);
-        std::string hash = sha256(p.string());
-        // Преобразование в TIMESTAMP для вставки в таблицу. Возможно, есть
-        // способ лучше
-        const std::chrono::time_point now = std::chrono::system_clock::now();
-        std::time_t current_time = std::chrono::system_clock::to_time_t(now);
-        std::tm local_time = *std::localtime(&current_time);
-        std::ostringstream oss;
-        oss << std::put_time(&local_time, "%Y-%m-%d %H:%M:%S");
-        std::string timestamp_time = oss.str();
+        std::string hash = sha256(p.string());                // Вероятно, должно передаваться в параметры
 
         int author_id = get_user_id(w, username, ip);
 
@@ -83,12 +73,11 @@ void add_file_template(
             w.exec_params("SELECT id FROM Files WHERE file_hash = $1", hash);
 
         if (res.empty()) {
-            pqxx::result file_added = w.exec_params(
+            const pqxx::result file_added = w.exec_params(
                 "INSERT INTO Files (file_name, file_size, file_hash, "
                 "addition_time, last_modified, DecRep_path, author_id) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-                file_name, file_size, hash, timestamp_time, timestamp_time,
-                DecRep_path, author_id
+                "VALUES ($1, $2, $3, NOW(), NOW(), $4, $5) RETURNING id",
+                file_name, file_size, hash, DecRep_path, author_id
             );
 
             int file_id = file_added[0]["id"].as<int>();
@@ -193,7 +182,7 @@ void delete_file(
             file_id
         );
 
-        int files_left = res2[0]["left"].as<int>();
+        int files_left = res2[0]["remain"].as<int>();
 
         if (files_left == 0) {
             w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
@@ -203,6 +192,110 @@ void delete_file(
         std::cout << "File deleted\n";
     } catch (const std::exception &e) {
         std::cout << "Error " << e.what() << std::endl;
+    }
+}
+
+void update_local_path(
+    const std::string &old_local_path,  // Может быть заменен
+    const std::string &new_local_path,
+    const std::string &username,
+    const std::string &ip
+) {
+    try {
+        pqxx::connection C(
+            "dbname=base user=postgres password=1234 host=localhost"
+        );
+        pqxx::work w(C);
+
+        int owner_id = get_user_id(w, username, ip);
+
+        w.exec_params(
+            "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 AND "
+            "owner_id = $3",
+            new_local_path, old_local_path, owner_id
+        );
+        w.commit();
+        // std::cout << "Local path updated\n";
+
+    } catch (const std::exception &e) {
+        std::cout << "Error " << e.what() << std::endl;
+    }
+}
+
+void update_file(
+    const std::string &local_path,
+    const std::string &username,
+    const std::string &ip,
+    std::string &new_hash,  // ???
+    std::size_t &new_size   // ???
+) {
+    try {
+        pqxx::connection C(
+            "dbname=base user=postgres password=1234 host=localhost"
+        );
+        pqxx::work w(C);
+
+        int owner_id = get_user_id(w, username, ip);
+
+        const pqxx::result res = w.exec_params(
+            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND owner_id "
+            "= $2",
+            local_path, owner_id
+        );
+        if (res.empty()) {
+            std::cout << "File doesn't exist\n";
+        }
+        int file_id = res[0]["file_id"].as<int>();
+
+        w.exec_params(
+            "UPDATE Files SET file_hash = $1, file_size = $2, last_modified = "
+            "NOW() WHERE id = $3",
+            new_hash, new_size, file_id
+        );
+        w.commit();
+
+        // std::cout << "File updated\n";
+
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+}
+
+void delete_user(const std::string &username, const std::string &ip) {
+    try {
+        pqxx::connection C(
+            "dbname=base user=postgres password=1234 host=localhost"
+        );
+        pqxx::work w(C);
+
+        int user_id = get_user_id(w, username, ip);
+
+        pqxx::result deleted_files = w.exec_params(
+            "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id",
+            user_id
+        );
+
+        for (const auto &file : deleted_files) {
+            int file_id = file["file_id"].as<int>();
+
+            const pqxx::result file_owners = w.exec_params(
+                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
+                file_id
+            );
+
+            int owners_left = file_owners[0]["remain"].as<int>();
+
+            if (owners_left == 0) {
+                w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
+            }
+        }
+        w.exec_params("DELETE FROM Users WHERE id = $1", user_id);
+        w.commit();
+
+        std::cout << "User deleted\n";
+
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 }
 
