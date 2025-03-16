@@ -1,19 +1,30 @@
-#include <filesystem>
-#include <iostream>
-#include <pqxx/pqxx>
+#include "db_manager.hpp"
+#include "sha256_stub.hpp"
 
 namespace fs = std::filesystem;
 
 namespace DBManager {
 
-int get_user_id(
+Manager::Manager(const std::string &connection_data) : C(connection_data) {
+    if (!C.is_open()) {
+        std::cerr << "Error opening database connection" << std::endl;
+    }
+}
+
+Manager::~Manager() {
+    if (C.is_open()) {
+        C.disconnect();
+    }
+}
+
+int Manager::get_user_id(
     pqxx::work &w,
-    const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &username
 ) {
     try {
         const pqxx::result user_id = w.exec_params(
-            "SELECT id FROM Users WHERE ip = $2 AND username = $1", username, ip
+            "SELECT id FROM Users WHERE ip = $1 AND username = $2", ip, username
         );
         if (!user_id.empty()) {
             return user_id[0]["id"].as<int>();
@@ -26,15 +37,15 @@ int get_user_id(
     }
 }
 
-void add_into_Users(const std::string &username, const std::string &ip) {
+void Manager::add_into_Users(
+    const std::string &username,
+    const std::string &ip
+) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
         const pqxx::result res = w.exec_params(
-            "SELECT id FROM Users WHERE username = $1 AND ip = $2", username, ip
+            "SELECT id FROM Users WHERE ip = $1 AND username = $2", ip, username
         );
         if (res.empty()) {
             w.exec_params(
@@ -43,16 +54,16 @@ void add_into_Users(const std::string &username, const std::string &ip) {
                 ip, username
             );
             w.commit();
-            std::cout << "User added successfully";
+            std::cout << "User added successfully\n";
         } else {
-            std::cout << "User already exists";
+            std::cout << "User already exists\n";
         }
     } catch (const std::exception &e) {
         std::cout << "Error" << e.what() << std::endl;
     }
 }
 
-void add_file_template(
+void Manager::add_file_template(
     pqxx::work &w,
     const std::string &local_file_path,
     const std::string &DecRep_path,
@@ -64,12 +75,14 @@ void add_file_template(
     if (fs::is_regular_file(p)) {
         std::string file_name = p.filename().string();
         std::size_t file_size = fs::file_size(p);
-        std::string hash = sha256(p.string());                // Вероятно, должно передаваться в параметры
+        std::string hash =
+            sha256(p.string()  // Вероятно, должно передаваться в параметры
+            );
 
-        int author_id = get_user_id(w, username, ip);
+        int author_id = get_user_id(w, ip, username);
 
         // Проверять ли ещё по имени файла?
-        pqxx::result res =
+        const pqxx::result res =
             w.exec_params("SELECT id FROM Files WHERE file_hash = $1", hash);
 
         if (res.empty()) {
@@ -95,16 +108,13 @@ void add_file_template(
     }
 }
 
-void add_file(
+void Manager::add_file(
     const std::string &local_file_path,
     const std::string &DecRep_path,
     const std::string &username,
     const std::string &ip
 ) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
         add_file_template(w, local_file_path, DecRep_path, username, ip);
@@ -114,7 +124,7 @@ void add_file(
     }
 }
 
-void add_folder(
+void Manager::add_folder(
     const std::string &local_folder_path,
     const std::string &DecRep_path,
     const std::string &username,
@@ -123,13 +133,10 @@ void add_folder(
     try {
         const fs::path p(local_folder_path);
         if (!is_directory(p)) {
-            std::cout << "That's not a folder";
+            std::cout << "That's not a folder\n";
             return;
         }
 
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
         for (const auto &entry : fs::recursive_directory_iterator(p)) {
@@ -145,21 +152,19 @@ void add_folder(
     }
 }
 
-void delete_file(
+void Manager::delete_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip
 ) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
-        int owner_id = get_user_id(w, username, ip);
+        int owner_id = get_user_id(w, ip, username);
 
         const pqxx::result res = w.exec_params(
-            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND owner_id "
+            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
+            "owner_id "
             "= $2",
             local_path, owner_id
         );
@@ -172,7 +177,8 @@ void delete_file(
         int file_id = res[0]["file_id"].as<int>();
 
         w.exec_params(
-            "DELETE FROM FileOwners WHERE local_path = $1 AND owner_id = $2 "
+            "DELETE FROM FileOwners WHERE local_path = $1 AND owner_id = "
+            "$2 "
             "AND file_id = $3",
             local_path, owner_id, file_id
         );
@@ -195,22 +201,20 @@ void delete_file(
     }
 }
 
-void update_local_path(
+void Manager::update_local_path(
     const std::string &old_local_path,  // Может быть заменен
     const std::string &new_local_path,
     const std::string &username,
     const std::string &ip
 ) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
-        int owner_id = get_user_id(w, username, ip);
+        int owner_id = get_user_id(w, ip, username);
 
         w.exec_params(
-            "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 AND "
+            "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 "
+            "AND "
             "owner_id = $3",
             new_local_path, old_local_path, owner_id
         );
@@ -222,7 +226,7 @@ void update_local_path(
     }
 }
 
-void update_file(
+void Manager::update_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip,
@@ -230,15 +234,13 @@ void update_file(
     std::size_t &new_size   // ???
 ) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
-        int owner_id = get_user_id(w, username, ip);
+        int owner_id = get_user_id(w, ip, username);
 
         const pqxx::result res = w.exec_params(
-            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND owner_id "
+            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
+            "owner_id "
             "= $2",
             local_path, owner_id
         );
@@ -248,7 +250,8 @@ void update_file(
         int file_id = res[0]["file_id"].as<int>();
 
         w.exec_params(
-            "UPDATE Files SET file_hash = $1, file_size = $2, last_modified = "
+            "UPDATE Files SET file_hash = $1, file_size = $2, "
+            "last_modified = "
             "NOW() WHERE id = $3",
             new_hash, new_size, file_id
         );
@@ -261,16 +264,13 @@ void update_file(
     }
 }
 
-void delete_user(const std::string &username, const std::string &ip) {
+void Manager::delete_user(const std::string &username, const std::string &ip) {
     try {
-        pqxx::connection C(
-            "dbname=base user=postgres password=1234 host=localhost"
-        );
         pqxx::work w(C);
 
-        int user_id = get_user_id(w, username, ip);
+        int user_id = get_user_id(w, ip, username);
 
-        pqxx::result deleted_files = w.exec_params(
+        const pqxx::result deleted_files = w.exec_params(
             "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id",
             user_id
         );
@@ -279,7 +279,8 @@ void delete_user(const std::string &username, const std::string &ip) {
             int file_id = file["file_id"].as<int>();
 
             const pqxx::result file_owners = w.exec_params(
-                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
+                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = "
+                "$1",
                 file_id
             );
 
@@ -298,5 +299,4 @@ void delete_user(const std::string &username, const std::string &ip) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 }
-
 }  // namespace DBManager
