@@ -66,6 +66,7 @@ void Manager::add_into_Users(
 void Manager::add_file_template(
     pqxx::work &w,
     const std::string &local_file_path,
+    const std::string &file_name,
     const std::string &DecRep_path,
     const std::string &username,
     const std::string &ip
@@ -73,7 +74,6 @@ void Manager::add_file_template(
     fs::path p(local_file_path);
 
     if (fs::is_regular_file(p)) {
-        std::string file_name = p.filename().string();
         std::size_t file_size = fs::file_size(p);
         std::string hash =
             sha256(p.string()  // Вероятно, должно передаваться в параметры
@@ -110,6 +110,7 @@ void Manager::add_file_template(
 
 void Manager::add_file(
     const std::string &local_file_path,
+    const std::string &file_name,
     const std::string &DecRep_path,
     const std::string &username,
     const std::string &ip
@@ -117,7 +118,9 @@ void Manager::add_file(
     try {
         pqxx::work w(C);
 
-        add_file_template(w, local_file_path, DecRep_path, username, ip);
+        add_file_template(
+            w, local_file_path, file_name, DecRep_path, username, ip
+        );
         w.commit();
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -141,8 +144,10 @@ void Manager::add_folder(
 
         for (const auto &entry : fs::recursive_directory_iterator(p)) {
             if (entry.is_regular_file()) {
+                std::string file_name = entry.path().filename().string();
                 add_file_template(
-                    w, entry.path().string(), DecRep_path, username, ip
+                    w, entry.path().string(), file_name, DecRep_path, username,
+                    ip
                 );
             }
         }
@@ -264,14 +269,17 @@ void Manager::update_file(
     }
 }
 
-void Manager::delete_user(const std::string &username, const std::string &ip) {
+std::vector<std::string>
+Manager::delete_user(const std::string &username, const std::string &ip) {
+    std::vector<std::string> deleted;
     try {
         pqxx::work w(C);
 
         int user_id = get_user_id(w, ip, username);
 
         const pqxx::result deleted_files = w.exec_params(
-            "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id",
+            "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, "
+            "DecRep_path",
             user_id
         );
 
@@ -287,6 +295,7 @@ void Manager::delete_user(const std::string &username, const std::string &ip) {
             int owners_left = file_owners[0]["remain"].as<int>();
 
             if (owners_left == 0) {
+                deleted.push_back(file["DecRep_path"].as<std::string>());
                 w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
             }
         }
@@ -298,5 +307,6 @@ void Manager::delete_user(const std::string &username, const std::string &ip) {
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
+    return deleted;
 }
 }  // namespace DBManager

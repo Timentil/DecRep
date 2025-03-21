@@ -29,6 +29,7 @@ public:
     static void add_file_template(
         pqxx::work &w,
         const std::string &local_file_path,
+        const std::string &file_name,
         const std::string &DecRep_path,
         const std::string &username,
         const std::string &ip
@@ -36,6 +37,7 @@ public:
 
     void add_file(
         const std::string &local_file_path,
+        const std::string &file_name,
         const std::string &DecRep_path,
         const std::string &username,
         const std::string &ip
@@ -69,7 +71,8 @@ public:
         std::size_t &new_size   // ???
     );
 
-    void delete_user(const std::string &username, const std::string &ip);
+    std::vector<std::string>
+    delete_user(const std::string &username, const std::string &ip);
 };
 }  // namespace DBManager
 

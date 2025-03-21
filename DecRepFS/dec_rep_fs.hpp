@@ -1,6 +1,7 @@
 #ifndef DEC_REP_FS_HPP
 #define DEC_REP_FS_HPP
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -37,6 +38,13 @@ struct DecRepFS {
     split_path(const std::string &s, char delim);
 
     void add_file(const std::string &path, const std::string &file_name);
+
+    void
+    add_folder(const std::string &DecRep_path, const std::string &local_path);
+
+    void delete_file(const std::string &path);
+
+    void delete_user_files(const std::vector<std::string> &file_paths);
 
     void print_DecRepFS() const;
 

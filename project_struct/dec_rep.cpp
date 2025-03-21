@@ -1,26 +1,28 @@
 #include "db_manager.cpp"
 #include "process_events.cpp"
-#include "dec_rep_fs.cpp"
 #include <unordered_map>
 // куча инклудов
 
 enum class Event {
-    ADD,
-    DEL,
-    DOWNLOAD,
+    ADD_FILE,
+    ADD_FOLDER,
+    CHANGE_FILE,
+    //CHANGE_FILE_NAME,
+    DELETE_FILE,
+    ADD_USER,
     EXIT,
+    DOWNLOAD,
     INVALID
     // ???
 };
 
 const std::unordered_map<std::string, Event> events = {
-    {"add", Event::ADD},
-    {"add_file", Event::ADD},
-    {"add_folder", Event::ADD},
-    {"del", Event::DEL},
-    {"delete", Event::DEL},
-    {"download", Event::DOWNLOAD},
-    {"exit", Event::EXIT}};
+    {"add_file", Event::ADD_FILE},
+    {"add_folder", Event::ADD_FOLDER},
+    {"change_file", Event::CHANGE_FILE},
+    {"delete_file", Event::DELETE_FILE},
+    {"exit", Event::EXIT},
+    {"download", Event::DOWNLOAD}};
 
 
 Event getEvent(const std::string &event) {
