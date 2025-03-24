@@ -69,12 +69,25 @@ public:
         );
     }
 
-    void delete_file(
+    void untrack_file(const std::string& full_DecRep_path) {
+        dbManager.untrack_file(full_DecRep_path);
+        decRepFS.delete_file(full_DecRep_path);
+    }
+
+    void untrack_folder(const std::string& DecRep_path) {
+        dbManager.untrack_folder(DecRep_path);
+        decRepFS.delete_folder(DecRep_path);
+    }
+
+    void delete_local_file(
         const std::string &local_path,
         const std::string &username,
         const std::string &ip
     ) {
-        dbManager.delete_file(local_path, username, ip);
+        const std::string delete_res = dbManager.delete_local_file(local_path, username, ip);
+        if (!delete_res.empty()) {
+            decRepFS.delete_file(delete_res);
+        }
     }
 
     void delete_user(const std::string &username, const std::string &ip) {

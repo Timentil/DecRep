@@ -157,11 +157,12 @@ void Manager::add_folder(
     }
 }
 
-void Manager::delete_file(
+std::string Manager::delete_local_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip
 ) {
+    std::string delete_full_path = "";
     try {
         pqxx::work w(C);
 
@@ -175,8 +176,8 @@ void Manager::delete_file(
         );
 
         if (res.empty()) {
-            std::cout << "You're trying to delete a file that doesn't exist\n";
-            return;
+            std::cout << "File doesn't exist\n";
+            return full_path;
         }
 
         int file_id = res[0]["file_id"].as<int>();
@@ -193,14 +194,83 @@ void Manager::delete_file(
             file_id
         );
 
-        int files_left = res2[0]["remain"].as<int>();
+        int owners_left = res2[0]["remain"].as<int>();
 
-        if (files_left == 0) {
+        if (owners_left == 0) {
+            const pqxx::result untrack_file = w.exec_params(
+                "SELECT DecRep_path, file_name FROM Files WHERE file_id = $1",
+                file_id
+            );
+            auto file_path = untrack_file[0]["DecRep_path"].as<std::string>();
+            auto file_name = untrack_file[0]["file_name"].as<std::string>();
+            fs::path full_path = fs::path(file_path) / file_name;
+            delete_full_path = full_path.string();
+
             w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
         }
+        w.commit();
+        std::cout << "File deleted\n";
+
+    } catch (const std::exception &e) {
+        std::cout << "Error " << e.what() << std::endl;
+    }
+
+    return delete_full_path;
+}
+
+void Manager::untrack_file(const std::string &full_DecRep_path) {
+    try {
+        pqxx::work w(C);
+
+        fs::path p(full_DecRep_path);
+        std::string file_name = p.filename().string();
+        std::string file_path = p.parent_path().string();
+
+        const pqxx::result res = w.exec_params(
+            "SELECT id FROM Files WHERE File_name = $1 AND DecRep_path = $2",
+            file_name, file_path
+        );
+
+        if (res.empty()) {
+            std::cout << "File doesn't exist\n";
+            return;
+        }
+
+        int file_id = res[0]["id"].as<int>();
+
+        w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
+        w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
 
         w.commit();
         std::cout << "File deleted\n";
+
+    } catch (const std::exception &e) {
+        std::cout << "Error " << e.what() << std::endl;
+    }
+}
+
+void Manager::untrack_folder(const std::string &DecRep_path) {
+    try {
+        pqxx::work w(C);
+
+        const pqxx::result res = w.exec_params(
+            "SELECT id FROM Files WHERE DecRep_path = $1", DecRep_path
+        );
+
+        if (res.empty()) {
+            return;
+        }
+
+        for (const auto &file : res) {
+            int file_id = file["id"].as<int>();
+            w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
+        }
+
+        w.exec_params("DELETE FROM Files WHERE DecRep_path = $1", DecRep_path);
+
+        w.commit();
+        std::cout << "Folder deleted\n";
+
     } catch (const std::exception &e) {
         std::cout << "Error " << e.what() << std::endl;
     }
