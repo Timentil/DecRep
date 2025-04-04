@@ -4,15 +4,14 @@
 #include "process_events.hpp"
 #include "server.hpp"
 
-// init database (if it haven't init yet)
-// run server (for lisening)
-// run file_watcher
-// construct DecRepFS from database
-// init EventsHandler
 class DecRep {
-    net::io_context ioc_;  // Общий io_context
+    net::io_context ioc_;
     net::executor_work_guard<net::io_context::executor_type> work_guard_;
     std::thread thread_;
+    DBManager::Manager dbManager;
+    DecRepFS::DecRepFS decRepFS;
+
+    friend namespace process_events;
 
 public:
     DecRep(const std::string &address, int port, const std::string &doc_root)
@@ -52,15 +51,15 @@ public:
     }
 
     void stop() {
-        work_guard_.reset();  // Разрешаем завершение io_context
-        ioc_.stop();  // Останавливаем все операции
+        work_guard_.reset();
+        ioc_.stop();
         if (thread_.joinable()) {
-            thread_.join();  // Дожидаемся завершения потока
+            thread_.join();
         }
     }
 };
 
-int main(int argc, char * argv[]) {
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cout << "Argc incorretc\n";
         return EXIT_FAILURE;
@@ -72,11 +71,6 @@ int main(int argc, char * argv[]) {
 
         app.run();
         std::cout << "Server is running...\n";
-
-        // while (true) {
-            // HTTP server -> Event x;
-            // reading user's command and call redirect_func
-        // }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;

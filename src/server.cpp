@@ -192,7 +192,7 @@ http::message_generator handle_request(
 
 net::awaitable<void> do_session(
     beast::tcp_stream stream,
-    std::shared_ptr<std::string const> doc_root
+    std::shared_ptr<std::const string> doc_root
 ) {
     // This buffer is required to persist across reads
     beast::flat_buffer buffer;
@@ -231,7 +231,7 @@ net::awaitable<void> do_session(
 
 net::awaitable<void> do_listen(
     net::ip::tcp::endpoint endpoint,
-    std::shared_ptr<std::string const> doc_root
+    std::shared_ptr<std::const string> doc_root
 ) {
     auto executor = co_await net::this_coro::executor;
     auto acceptor = net::ip::tcp::acceptor{executor, endpoint};

@@ -17,8 +17,13 @@ namespace net = boost::asio;
 
 namespace client {
 // Performs an HTTP GET and prints the response
-net::awaitable<http::response<http::dynamic_body>>
-do_session(std::string host, std::string port, std::string target, std::string event, int version);
+net::awaitable<http::response<http::dynamic_body>> do_session(
+    std::string host,
+    std::string port,
+    std::string target,
+    std::string event,
+    int version
+);
 }  // namespace client
 
 #endif  // CLIENT_HPP_

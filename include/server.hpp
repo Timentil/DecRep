@@ -42,14 +42,14 @@ http::message_generator handle_request(
 // Handles an HTTP server connection
 net::awaitable<void> do_session(
     beast::tcp_stream stream,
-    std::shared_ptr<std::string const> doc_root
+    std::shared_ptr<std::const string> doc_root
 );
 
 // Accepts incoming connections and launches the sessions
 net::awaitable<void> do_listen(
     net::ip::tcp::endpoint endpoint,
-    std::shared_ptr<std::string const> doc_root
+    std::shared_ptr<std::const string> doc_root
 );
 }  // namespace server
 
-#endif // SERVER_HPP_
+#endif  // SERVER_HPP_
