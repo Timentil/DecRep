@@ -1,9 +1,8 @@
 #ifndef PROCESS_EVENTS_HPP_
 #define PROCESS_EVENTS_HPP_
 
-#include "db_manager.hpp"
-#include "dec_rep.hpp"
-#include "dec_rep_fs.hpp"
+#include <unordered_map>
+#include "dec_rep_fwd.hpp"
 
 namespace process_events {
 

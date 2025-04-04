@@ -1,8 +1,4 @@
-#include "client.hpp"
-#include "db_manager.hpp"
-#include "dec_rep_fs.hpp"
-#include "process_events.hpp"
-#include "server.hpp"
+#include "dec_rep.hpp"
 
 class DecRep {
     net::io_context ioc_;
@@ -11,11 +7,16 @@ class DecRep {
     DBManager::Manager dbManager;
     DecRepFS::DecRepFS decRepFS;
 
-    friend namespace process_events;
-
 public:
-    DecRep(const std::string &address, int port, const std::string &doc_root)
-        : ioc_(), work_guard_(net::make_work_guard(ioc_)) {
+    DecRep(
+        const std::string &address,
+        int port,
+        const std::string &doc_root,
+        const std::string &connection_data
+    )
+        : ioc_(),
+          work_guard_(net::make_work_guard(ioc_)),
+          dbManager(connection_data) {
         // Server init
         {
             const auto address_ = net::ip::make_address(address);
@@ -46,7 +47,6 @@ public:
     }
 
     void run() {
-        // Запускаем обработку асинхронных операций в отдельном потоке
         thread_ = std::thread([this] { ioc_.run(); });
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     try {
-        DecRep app("0.0.0.0", std::atoi(argv[1]), "/");
+        DecRep app("0.0.0.0", std::atoi(argv[1]), "/", "stub");
         // if database haven't tables -> choose between 2 options: create own
         // decrep or connect to other decrep
 

@@ -27,11 +27,6 @@ struct File final : Node {
 
 struct Directory final : Node {
     using Node::Node;
-    // По поводу мапы. Unordered не гарантирует порядок вывода, просто мапа же
-    // выводит в лексикографическом порядке (если это важно, можно заменить).
-    // Т.е. всё равно сохраняется ситуация, когда файлы и папки выводятся
-    // вперемешку. Если надо, можно переделать метод print(), чтобы выводил
-    // сначала папки, а потом файлы, но надо ли?
     std::unordered_map<std::string, std::unique_ptr<Node>> children;
 
     void print(int level) const override;

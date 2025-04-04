@@ -1,4 +1,4 @@
-#include "process_events.hpp"
+#include "dec_rep.hpp"
 
 namespace process_events {
 
@@ -23,7 +23,7 @@ void handle_message(std::istringstream &msg) {
     Event event_id = get_event(event);
     switch (event_id) {
         case Event::CONNECT:
-            connect(msg);
+            // connect(msg);
             break;
         case Event::ADD_FILE:
             /* process event code*/

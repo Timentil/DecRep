@@ -305,8 +305,8 @@ void Manager::update_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip,
-    std::string &new_hash,  // ???
-    std::size_t &new_size   // ???
+    std::string &new_hash,
+    std::size_t &new_size
 ) {
     try {
         pqxx::work w(C);

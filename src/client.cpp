@@ -56,31 +56,3 @@ net::awaitable<http::response<http::dynamic_body>> do_session(
     co_return res;
 }
 }  // namespace client
-
-// // Check command line arguments.
-// if (argc != 4 && argc != 5) {
-//     std::cerr << "Usage: http-client-awaitable <host> <port> <target> "
-//                  "[<HTTP version: 1.0 or 1.1(default)>]\n"
-//               << "Example:\n"
-//               << "    http-client-awaitable www.example.com 80 /\n"
-//               << "    http-client-awaitable www.example.com 80 / 1.0\n";
-//     return EXIT_FAILURE;
-// }
-// const auto host = argv[1];
-// const auto port = argv[2];
-// const auto target = argv[3];
-// const auto version = 11;
-
-// // Launch the asynchronous operation
-// net::co_spawn(
-//     ioc, client::do_session(host, port, target, version),
-//     // If the awaitable exists with an exception, it gets delivered here
-//     // as `e`. This can happen for regular errors, such as connection
-//     // drops.
-//     [](std::exception_ptr e, http::response<http::dynamic_body> res) {
-//         if (e) {
-//             std::rethrow_exception(e);
-//         }
-//         std::cout << res << std::endl;
-//     }
-// );
