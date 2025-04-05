@@ -379,4 +379,19 @@ Manager::delete_user(const std::string &username, const std::string &ip) {
     }
     return deleted;
 }
+
+bool Manager::is_users_empty() {
+    try {
+        pqxx::work w(C);
+
+        pqxx::result result = w.exec(
+            "SELECT EXISTS (SELECT 1 FROM " + w.quote_name("users") + ")"
+        );
+
+        return result[0][0].as<bool>();
+    } catch (const pqxx::sql_error &e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+        throw;
+    }
+}
 }  // namespace DBManager

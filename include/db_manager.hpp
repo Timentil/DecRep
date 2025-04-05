@@ -77,6 +77,8 @@ public:
 
     std::vector<std::string>
     delete_user(const std::string &username, const std::string &ip);
+
+    bool is_users_empty();
 };
 }  // namespace DBManager
 

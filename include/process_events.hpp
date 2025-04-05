@@ -90,6 +90,8 @@ void delete_user(
     const std::string &username,
     const std::string &ip
 );
+
+bool is_db_empty(DecRep &app);
 };  // namespace process_events
 
 #endif  // PROCESS_EVENTS_HPP_

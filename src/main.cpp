@@ -1,76 +1,58 @@
+#include <boost/format.hpp>
+#include "client.hpp"
 #include "dec_rep.hpp"
 
-class DecRep {
-    net::io_context ioc_;
-    net::executor_work_guard<net::io_context::executor_type> work_guard_;
-    std::thread thread_;
-    DBManager::Manager dbManager;
-    DecRepFS::DecRepFS decRepFS;
-
-public:
-    DecRep(
-        const std::string &address,
-        int port,
-        const std::string &doc_root,
-        const std::string &connection_data
-    )
-        : ioc_(),
-          work_guard_(net::make_work_guard(ioc_)),
-          dbManager(connection_data) {
-        // Server init
-        {
-            const auto address_ = net::ip::make_address(address);
-            const auto port_ = static_cast<unsigned short>(port);
-            const auto doc_root_ = std::make_shared<std::string>(doc_root);
-
-            // Spawn a listening port
-            net::co_spawn(
-                ioc_,
-                server::do_listen(
-                    net::ip::tcp::endpoint{address_, port_}, doc_root_
-                ),
-                [](std::exception_ptr e) {
-                    if (e) {
-                        try {
-                            std::rethrow_exception(e);
-                        } catch (std::exception const &e) {
-                            std::cerr << "Error: " << e.what() << std::endl;
-                        }
-                    }
-                }
-            );
-        }
-    }
-
-    ~DecRep() {
-        stop();
-    }
-
-    void run() {
-        thread_ = std::thread([this] { ioc_.run(); });
-    }
-
-    void stop() {
-        work_guard_.reset();
-        ioc_.stop();
-        if (thread_.joinable()) {
-            thread_.join();
-        }
-    }
-};
-
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        std::cout << "Argc incorretc\n";
+    if (argc != 5) {
+        std::cerr << "Usage: dec-rep <lisening_port> <db_port> <db_name> "
+                     "<db_password>\n"
+                  << "Example:\n"
+                  << "    ./dec-rep 1234 4321 mydb 123123\n";
         return EXIT_FAILURE;
     }
-    try {
-        DecRep app("0.0.0.0", std::atoi(argv[1]), "/", "stub");
-        // if database haven't tables -> choose between 2 options: create own
-        // decrep or connect to other decrep
+    const auto lisening_port = static_cast<unsigned short>(std::atoi(argv[1]));
+    const std::string connection_str = 
+    (boost::format("host=localhost port=%1% dbname=%2% user=postgres password=%3%") 
+        % argv[2] % argv[3] % argv[4]).str();
 
-        app.run();
-        std::cout << "Server is running...\n";
+    try {
+        DecRep app("0.0.0.0", lisening_port, "/", connection_str);
+
+        if (process_events::is_db_empty(app)) {
+            std::string user_name{};
+            std::cout << "Hello, enter your user name: ";
+            std::cin >> user_name;
+            process_events::add_user(app, user_name, "0.0.0.0");  // TODO
+
+            std::string command{};
+            std::cout
+                << "You don't have a repository yet. Do you want to create "
+                   "your own or connect to an existing one?\n"
+                << "Type (create) or (connect): ";
+            std::cin >> command;
+            if (command != "connect" || command != "create") {
+                std::cerr << "Incorrect command\n";
+                return EXIT_FAILURE;
+            }
+            if (command == "connect") {
+                std::string host{}, port{};
+                std::cout << "Enter ip address and port (Ex: 0.0.0.0 1234): ";
+                std::cin >> host >> port;
+                net::co_spawn(
+                    app.get_ioc(), client::do_session(host, port, "/", "connect", 11),
+                    [](std::exception_ptr e, http::response<http::dynamic_body> res) {
+                        if (e) {
+                            std::rethrow_exception(e);
+                        }
+                        if (res.result_int() != 200) {
+                            std::cout << "Request fail: " << res.result_int() << '\n';
+                        }
+                    }
+                );
+            }
+        }
+
+        std::cout << "App is running...\n";
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;

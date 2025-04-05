@@ -30,7 +30,9 @@ public:
     void run();
 
     void stop();
-    
+
+    net::io_context& get_ioc();
+
     friend void process_events::connect(DecRep &app, std::istringstream &msg);
 
     friend void process_events::add_file(
@@ -92,6 +94,8 @@ public:
         const std::string &username,
         const std::string &ip
     );
+
+    friend bool process_events::is_db_empty(DecRep &app);
 };
 
 #endif  // DEC_REP_HPP_

@@ -15,5 +15,5 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 include_directories(include)
 
-add_executable(dec-rep src/main.cpp src/db_manager.cpp src/process_events.cpp src/server.cpp src/client.cpp src/file_watcher.cpp)
+add_executable(dec-rep src/main.cpp src/db_manager.cpp src/process_events.cpp src/server.cpp src/client.cpp src/file_watcher.cpp src/dec_rep.cpp src/dec_rep_fs.cpp)
 target_link_libraries(dec-rep ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})

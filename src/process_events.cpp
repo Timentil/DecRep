@@ -138,4 +138,8 @@ void delete_user(
         app.dbManager.delete_user(username, ip);
     app.decRepFS.delete_user_files(deleted_files);
 }
+
+bool is_db_empty(DecRep &app) {
+    return app.dbManager.is_users_empty();
+}
 }  // namespace process_events
