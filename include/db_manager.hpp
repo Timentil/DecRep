@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 
@@ -79,6 +80,10 @@ public:
     delete_user(const std::string &username, const std::string &ip);
 
     bool is_users_empty();
+
+    nlohmann::json fetch_table_data(const std::string &table_name);
+
+    nlohmann::json get_all_data();
 };
 }  // namespace DBManager
 

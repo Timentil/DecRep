@@ -394,4 +394,28 @@ bool Manager::is_users_empty() {
         throw;
     }
 }
+
+nlohmann::json Manager::fetch_table_data(const std::string &table_name) {
+    nlohmann::json table_json;
+    pqxx::work w(C);
+    pqxx::result result = w.exec("SELECT * FROM " + w.quote_name(table_name));
+
+    for (const auto &row : result) {
+        nlohmann::json row_json;
+        for (const auto &field : row) {
+            row_json.push_back(field.c_str());
+        }
+        table_json.push_back(row_json);
+    }
+    w.commit();
+    return table_json;
+}
+
+nlohmann::json Manager::get_all_data() {
+    nlohmann::json response_json;
+    response_json["users"] = fetch_table_data("users");
+    response_json["files"] = fetch_table_data("files");
+    response_json["filesowners"] = fetch_table_data("filesowners");
+    return response_json;
+}
 }  // namespace DBManager

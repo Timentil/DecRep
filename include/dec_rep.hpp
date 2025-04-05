@@ -31,7 +31,7 @@ public:
 
     void stop();
 
-    net::io_context& get_ioc();
+    net::io_context &get_ioc();
 
     friend void process_events::connect(DecRep &app, std::istringstream &msg);
 

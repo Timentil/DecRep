@@ -11,9 +11,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     const auto lisening_port = static_cast<unsigned short>(std::atoi(argv[1]));
-    const std::string connection_str = 
-    (boost::format("host=localhost port=%1% dbname=%2% user=postgres password=%3%") 
-        % argv[2] % argv[3] % argv[4]).str();
+    const std::string connection_str =
+        (boost::format(
+             "host=localhost port=%1% dbname=%2% user=postgres password=%3%"
+         ) %
+         argv[2] % argv[3] % argv[4])
+            .str();
 
     try {
         DecRep app("0.0.0.0", lisening_port, "/", connection_str);
@@ -39,20 +42,24 @@ int main(int argc, char *argv[]) {
                 std::cout << "Enter ip address and port (Ex: 0.0.0.0 1234): ";
                 std::cin >> host >> port;
                 net::co_spawn(
-                    app.get_ioc(), client::do_session(host, port, "/", "connect", 11),
-                    [](std::exception_ptr e, http::response<http::dynamic_body> res) {
+                    app.get_ioc(),
+                    client::do_session(host, port, "/", "connect", 11),
+                    [](std::exception_ptr e,
+                       http::response<http::dynamic_body> res) {
                         if (e) {
                             std::rethrow_exception(e);
                         }
                         if (res.result_int() != 200) {
-                            std::cout << "Request fail: " << res.result_int() << '\n';
+                            std::cout << "Request fail: " << res.result_int()
+                                      << '\n';
                         }
                     }
                 );
             }
         }
 
-        std::cout << "App is running...\n";
+        std::cout << "App is running...\n"
+                  << "Enter your comands here\n";
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;

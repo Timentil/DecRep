@@ -13,6 +13,8 @@ find_package(Boost 1.87 REQUIRED filesystem)  # Required by Boost.DLL
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+find_package(nlohmann_json 3.10.5 REQUIRED)
+
 include_directories(include)
 
 add_executable(dec-rep src/main.cpp src/db_manager.cpp src/process_events.cpp src/server.cpp src/client.cpp src/file_watcher.cpp src/dec_rep.cpp src/dec_rep_fs.cpp)
