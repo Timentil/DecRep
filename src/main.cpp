@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
                   << "    ./dec-rep 1234 mydb 123123\n";
         return EXIT_FAILURE;
     }
-    const auto lisening_port = static_cast<unsigned short>(std::atoi(argv[1]));
+    const auto lisening_port = std::atoi(argv[1]);
     const std::string connection_str =
         (boost::format(
              "host=localhost port=5432 dbname=%2% user=postgres password=%3%"
@@ -18,13 +18,13 @@ int main(int argc, char *argv[]) {
             .str();
 
     try {
-        DecRep app("0.0.0.0", lisening_port, "/", connection_str);
+        DecRep app("0.0.0.0", lisening_port, connection_str);
 
-        if (process_events::is_db_empty(app)) {
+        if (app.get_dbManager().is_users_empty()) {
             std::string user_name{};
             std::cout << "Hello, enter your user name: ";
             std::cin >> user_name;
-            process_events::add_user(app, user_name, "0.0.0.0");  // TODO
+            process_events::add_user(app, user_name, "0.0.0.0", "1234");  // TODO
 
             std::string command{};
             std::cout
@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
                    "your own or connect to an existing one?\n"
                 << "Type (create) or (connect): ";
             std::cin >> command;
+
             if (command != "connect" || command != "create") {
                 std::cerr << "Incorrect command\n";
                 return EXIT_FAILURE;

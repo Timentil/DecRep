@@ -3,7 +3,6 @@
 DecRep::DecRep(
     const std::string &address,
     int port,
-    const std::string &doc_root,
     const std::string &connection_data
 )
     : ioc_(),
@@ -13,7 +12,7 @@ DecRep::DecRep(
     {
         const auto address_ = net::ip::make_address(address);
         const auto port_ = static_cast<unsigned short>(port);
-        const auto doc_root_ = std::make_shared<std::string>(doc_root);
+        const auto doc_root_ = std::make_shared<std::string>("/");
 
         // Spawn a listening port
         net::co_spawn(
@@ -52,4 +51,8 @@ void DecRep::stop() {
 
 net::io_context &DecRep::get_ioc() {
     return ioc_;
+}
+
+DBManager::Manager &DecRep::get_dbManager() {
+    return dbManager;
 }

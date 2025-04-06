@@ -21,7 +21,6 @@ public:
     DecRep(
         const std::string &address,
         int port,
-        const std::string &doc_root,
         const std::string &connection_data
     );
 
@@ -33,6 +32,8 @@ public:
 
     net::io_context &get_ioc();
 
+    DBManager::Manager &get_dbManager();
+
     friend void process_events::connect(DecRep &app, std::istringstream &msg);
 
     friend void process_events::add_file(
@@ -40,7 +41,8 @@ public:
         const std::string &local_file_path,
         const std::string &DecRep_path,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
 
     friend void process_events::add_folder(
@@ -48,13 +50,15 @@ public:
         const std::string &local_folder_path,
         const std::string &DecRep_path,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
 
     friend void process_events::add_user(
         DecRep &app,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
 
     friend void process_events::update_file(
@@ -62,6 +66,7 @@ public:
         const std::string &local_path,
         const std::string &username,
         const std::string &ip,
+        const std::string &port,
         std::string &new_hash,
         std::size_t &new_size
     );
@@ -71,7 +76,8 @@ public:
         const std::string &old_local_path,
         const std::string &new_local_path,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
 
     friend void process_events::untrack_file(
@@ -86,16 +92,16 @@ public:
         DecRep &app,
         const std::string &local_path,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
 
     friend void process_events::delete_user(
         DecRep &app,
         const std::string &username,
-        const std::string &ip
+        const std::string &ip,
+        const std::string &port
     );
-
-    friend bool process_events::is_db_empty(DecRep &app);
 };
 
 #endif  // DEC_REP_HPP_

@@ -66,12 +66,13 @@ void add_file(
     const std::string &local_file_path,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     const std::string file_name = get_name(local_file_path);
 
     app.dbManager.add_file(
-        local_file_path, file_name, DecRep_path, username, ip
+        local_file_path, file_name, DecRep_path, username, ip, port
     );
     app.decRepFS.add_file(DecRep_path, file_name);
 }
@@ -81,15 +82,16 @@ void add_folder(
     const std::string &local_folder_path,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     const std::string folder_name = get_name(local_folder_path);
-    app.dbManager.add_folder(local_folder_path, DecRep_path, username, ip);
+    app.dbManager.add_folder(local_folder_path, DecRep_path, username, ip, port);
     app.decRepFS.add_folder(DecRep_path, local_folder_path);
 }
 
-void add_user(DecRep &app, const std::string &username, const std::string &ip) {
-    app.dbManager.add_into_Users(username, ip);
+void add_user(DecRep &app, const std::string &username, const std::string &ip, const std::string &port) {
+    app.dbManager.add_into_Users(username, ip, port);
 }
 
 void update_file(
@@ -97,10 +99,11 @@ void update_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip,
+    const std::string &port,
     std::string &new_hash,
     std::size_t &new_size
 ) {
-    app.dbManager.update_file(local_path, username, ip, new_hash, new_size);
+    app.dbManager.update_file(local_path, username, ip, port, new_hash, new_size);
 }
 
 void update_local_path(
@@ -108,10 +111,11 @@ void update_local_path(
     const std::string &old_local_path,
     const std::string &new_local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     app.dbManager.update_local_path(
-        old_local_path, new_local_path, username, ip
+        old_local_path, new_local_path, username, ip, port
     );
 }
 
@@ -129,10 +133,11 @@ void delete_local_file(
     DecRep &app,
     const std::string &local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     const std::string delete_res =
-        app.dbManager.delete_local_file(local_path, username, ip);
+        app.dbManager.delete_local_file(local_path, username, ip, port);
     if (!delete_res.empty()) {
         app.decRepFS.delete_file(delete_res);
     }
@@ -141,14 +146,11 @@ void delete_local_file(
 void delete_user(
     DecRep &app,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     const std::vector<std::string> deleted_files =
-        app.dbManager.delete_user(username, ip);
+        app.dbManager.delete_user(username, ip, port);
     app.decRepFS.delete_user_files(deleted_files);
-}
-
-bool is_db_empty(DecRep &app) {
-    return app.dbManager.is_users_empty();
 }
 }  // namespace process_events

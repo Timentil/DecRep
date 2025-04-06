@@ -44,7 +44,8 @@ void add_file(
     const std::string &local_file_path,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 );
 
 void add_folder(
@@ -52,16 +53,23 @@ void add_folder(
     const std::string &local_folder_path,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 );
 
-void add_user(DecRep &app, const std::string &username, const std::string &ip);
+void add_user(
+    DecRep &app,
+    const std::string &username,
+    const std::string &ip,
+    const std::string &port
+);
 
 void update_file(
     DecRep &app,
     const std::string &local_path,
     const std::string &username,
     const std::string &ip,
+    const std::string &port,
     std::string &new_hash,  //??
     std::size_t &new_size   //??
 );
@@ -71,7 +79,8 @@ void update_local_path(
     const std::string &old_local_path,  // Может быть заменен
     const std::string &new_local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 );
 
 void untrack_file(DecRep &app, const std::string &full_DecRep_path);
@@ -82,16 +91,16 @@ void delete_local_file(
     DecRep &app,
     const std::string &local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 );
 
 void delete_user(
     DecRep &app,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 );
-
-bool is_db_empty(DecRep &app);
 };  // namespace process_events
 
 #endif  // PROCESS_EVENTS_HPP_
