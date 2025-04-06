@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS Users(
     id SERIAL PRIMARY KEY,
     ip INET NOT NULL,
+    port INTEGER NOT NULL,
     username VARCHAR(255) NOT NULL,
     first_connection_time TIMESTAMP NOT NULL
 );

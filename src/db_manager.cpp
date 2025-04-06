@@ -20,46 +20,41 @@ Manager::~Manager() {
 int Manager::get_user_id(
     pqxx::work &w,
     const std::string &ip,
+    const std::string &port,
     const std::string &username
 ) {
-    try {
-        const pqxx::result user_id = w.exec_params(
-            "SELECT id FROM Users WHERE ip = $1 AND username = $2", ip, username
-        );
-        if (!user_id.empty()) {
-            return user_id[0]["id"].as<int>();
-        } else {
-            throw std::runtime_error("User does not exist");
-        }
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        throw;
+    const pqxx::result user_id = w.exec_params(
+        "SELECT id FROM Users WHERE ip = $1 AND port = $2 AND username = $3",
+        ip, port, username
+    );
+    if (!user_id.empty()) {
+        return user_id[0]["id"].as<int>();
+    } else {
+        throw std::runtime_error("User does not exist");
     }
 }
 
 void Manager::add_into_Users(
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        const pqxx::result res = w.exec_params(
-            "SELECT id FROM Users WHERE ip = $1 AND username = $2", ip, username
+    const pqxx::result res = w.exec_params(
+        "SELECT id FROM Users WHERE ip = $1 AND port = $2 AND username = $3",
+        ip, port, username
+    );
+    if (res.empty()) {
+        w.exec_params(
+            "INSERT INTO Users (ip, port, username, first_connection_time) "
+            "VALUES ($1, $2, $3, NOW())",
+            ip, port, username
         );
-        if (res.empty()) {
-            w.exec_params(
-                "INSERT INTO Users (ip, username, first_connection_time) "
-                "VALUES ($1, $2, NOW())",
-                ip, username
-            );
-            w.commit();
-            std::cout << "User added successfully\n";
-        } else {
-            std::cout << "User already exists\n";
-        }
-    } catch (const std::exception &e) {
-        std::cout << "Error" << e.what() << std::endl;
+        w.commit();
+        std::cout << "User added successfully\n";
+    } else {
+        std::cout << "User already exists\n";
     }
 }
 
@@ -69,17 +64,17 @@ void Manager::add_file_template(
     const std::string &file_name,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
     fs::path p(local_file_path);
 
     if (fs::is_regular_file(p)) {
         std::size_t file_size = fs::file_size(p);
-        std::string hash =
-            sha256(p.string()  // Вероятно, должно передаваться в параметры
-            );
+        // Вероятно, должно передаваться в параметры
+        std::string hash = sha256(p.string());
 
-        int author_id = get_user_id(w, ip, username);
+        int author_id = get_user_id(w, ip, username, port);
 
         // Проверять ли ещё по имени файла?
         const pqxx::result res =
@@ -113,286 +108,251 @@ void Manager::add_file(
     const std::string &file_name,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        add_file_template(
-            w, local_file_path, file_name, DecRep_path, username, ip
-        );
-        w.commit();
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
+    add_file_template(
+        w, local_file_path, file_name, DecRep_path, username, ip, port
+    );
+    w.commit();
 }
 
 void Manager::add_folder(
     const std::string &local_folder_path,
     const std::string &DecRep_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
-    try {
-        const fs::path p(local_folder_path);
-        if (!is_directory(p)) {
-            std::cout << "That's not a folder\n";
-            return;
-        }
-
-        pqxx::work w(C);
-
-        for (const auto &entry : fs::recursive_directory_iterator(p)) {
-            if (entry.is_regular_file()) {
-                std::string file_name = entry.path().filename().string();
-                add_file_template(
-                    w, entry.path().string(), file_name, DecRep_path, username,
-                    ip
-                );
-            }
-        }
-        w.commit();
-    } catch (const std::exception &e) {
-        std::cout << "Error " << e.what() << std::endl;
+    const fs::path p(local_folder_path);
+    if (!is_directory(p)) {
+        std::cout << "That's not a folder\n";
+        return;
     }
+
+    pqxx::work w(C);
+
+    for (const auto &entry : fs::recursive_directory_iterator(p)) {
+        if (entry.is_regular_file()) {
+            std::string file_name = entry.path().filename().string();
+            add_file_template(
+                w, entry.path().string(), file_name, DecRep_path, username,
+                ip, port
+            );
+        }
+    }
+    w.commit();
 }
 
 std::string Manager::delete_local_file(
     const std::string &local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
+    pqxx::work w(C);
     std::string delete_full_path = "";
-    try {
-        pqxx::work w(C);
 
-        int owner_id = get_user_id(w, ip, username);
+    int owner_id = get_user_id(w, ip, port, username);
 
-        const pqxx::result res = w.exec_params(
-            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
-            "owner_id "
-            "= $2",
-            local_path, owner_id
-        );
+    const pqxx::result res = w.exec_params(
+        "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
+        "owner_id "
+        "= $2",
+        local_path, owner_id
+    );
 
-        if (res.empty()) {
-            std::cout << "File doesn't exist\n";
-            return local_path;
-        }
-
-        int file_id = res[0]["file_id"].as<int>();
-
-        w.exec_params(
-            "DELETE FROM FileOwners WHERE local_path = $1 AND owner_id = "
-            "$2 "
-            "AND file_id = $3",
-            local_path, owner_id, file_id
-        );
-
-        const pqxx::result res2 = w.exec_params(
-            "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
-            file_id
-        );
-
-        int owners_left = res2[0]["remain"].as<int>();
-
-        if (owners_left == 0) {
-            const pqxx::result untrack_file = w.exec_params(
-                "SELECT DecRep_path, file_name FROM Files WHERE file_id = $1",
-                file_id
-            );
-            auto file_path = untrack_file[0]["DecRep_path"].as<std::string>();
-            auto file_name = untrack_file[0]["file_name"].as<std::string>();
-            fs::path full_path = fs::path(file_path) / file_name;
-            delete_full_path = full_path.string();
-
-            w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
-        }
-        w.commit();
-        std::cout << "File deleted\n";
-
-    } catch (const std::exception &e) {
-        std::cout << "Error " << e.what() << std::endl;
+    if (res.empty()) {
+        std::cout << "File doesn't exist\n";
+        return local_path;
     }
 
+    int file_id = res[0]["file_id"].as<int>();
+
+    w.exec_params(
+        "DELETE FROM FileOwners WHERE local_path = $1 AND owner_id = "
+        "$2 "
+        "AND file_id = $3",
+        local_path, owner_id, file_id
+    );
+
+    const pqxx::result res2 = w.exec_params(
+        "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
+        file_id
+    );
+
+    int owners_left = res2[0]["remain"].as<int>();
+
+    if (owners_left == 0) {
+        const pqxx::result untrack_file = w.exec_params(
+            "SELECT DecRep_path, file_name FROM Files WHERE file_id = $1",
+            file_id
+        );
+        auto file_path = untrack_file[0]["DecRep_path"].as<std::string>();
+        auto file_name = untrack_file[0]["file_name"].as<std::string>();
+        fs::path full_path = fs::path(file_path) / file_name;
+        delete_full_path = full_path.string();
+
+        w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
+    }
+    w.commit();
+    std::cout << "File deleted\n";
     return delete_full_path;
 }
 
 void Manager::untrack_file(const std::string &full_DecRep_path) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        fs::path p(full_DecRep_path);
-        std::string file_name = p.filename().string();
-        std::string file_path = p.parent_path().string();
+    fs::path p(full_DecRep_path);
+    std::string file_name = p.filename().string();
+    std::string file_path = p.parent_path().string();
 
-        const pqxx::result res = w.exec_params(
-            "SELECT id FROM Files WHERE File_name = $1 AND DecRep_path = $2",
-            file_name, file_path
-        );
+    const pqxx::result res = w.exec_params(
+        "SELECT id FROM Files WHERE File_name = $1 AND DecRep_path = $2",
+        file_name, file_path
+    );
 
-        if (res.empty()) {
-            std::cout << "File doesn't exist\n";
-            return;
-        }
-
-        int file_id = res[0]["id"].as<int>();
-
-        w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
-        w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
-
-        w.commit();
-        std::cout << "File deleted\n";
-
-    } catch (const std::exception &e) {
-        std::cout << "Error " << e.what() << std::endl;
+    if (res.empty()) {
+        std::cout << "File doesn't exist\n";
+        return;
     }
+
+    int file_id = res[0]["id"].as<int>();
+
+    w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
+    w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
+
+    w.commit();
+    std::cout << "File deleted\n";
 }
 
 void Manager::untrack_folder(const std::string &DecRep_path) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        const pqxx::result res = w.exec_params(
-            "SELECT id FROM Files WHERE DecRep_path = $1", DecRep_path
-        );
+    const pqxx::result res = w.exec_params(
+        "SELECT id FROM Files WHERE DecRep_path = $1", DecRep_path
+    );
 
-        if (res.empty()) {
-            return;
-        }
-
-        for (const auto &file : res) {
-            int file_id = file["id"].as<int>();
-            w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
-        }
-
-        w.exec_params("DELETE FROM Files WHERE DecRep_path = $1", DecRep_path);
-
-        w.commit();
-        std::cout << "Folder deleted\n";
-
-    } catch (const std::exception &e) {
-        std::cout << "Error " << e.what() << std::endl;
+    if (res.empty()) {
+        return;
     }
+
+    for (const auto &file : res) {
+        int file_id = file["id"].as<int>();
+        w.exec_params("DELETE FROM FileOwners WHERE file_id = $1", file_id);
+    }
+
+    w.exec_params("DELETE FROM Files WHERE DecRep_path = $1", DecRep_path);
+
+    w.commit();
+    std::cout << "Folder deleted\n";
 }
 
 void Manager::update_local_path(
     const std::string &old_local_path,  // Может быть заменен
     const std::string &new_local_path,
     const std::string &username,
-    const std::string &ip
+    const std::string &ip,
+    const std::string &port
 ) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        int owner_id = get_user_id(w, ip, username);
+    int owner_id = get_user_id(w, ip, port, username);
 
-        w.exec_params(
-            "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 "
-            "AND "
-            "owner_id = $3",
-            new_local_path, old_local_path, owner_id
-        );
-        w.commit();
-        // std::cout << "Local path updated\n";
+    w.exec_params(
+        "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 "
+        "AND "
+        "owner_id = $3",
+        new_local_path, old_local_path, owner_id
+    );
+    w.commit();
 
-    } catch (const std::exception &e) {
-        std::cout << "Error " << e.what() << std::endl;
-    }
+    std::cout << "Local path updated\n";
 }
 
 void Manager::update_file(
     const std::string &local_path,
     const std::string &username,
     const std::string &ip,
+    const std::string &port,
     std::string &new_hash,
     std::size_t &new_size
 ) {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        int owner_id = get_user_id(w, ip, username);
+    int owner_id = get_user_id(w, ip, port, username);
 
-        const pqxx::result res = w.exec_params(
-            "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
-            "owner_id "
-            "= $2",
-            local_path, owner_id
-        );
-        if (res.empty()) {
-            std::cout << "File doesn't exist\n";
-        }
-        int file_id = res[0]["file_id"].as<int>();
-
-        w.exec_params(
-            "UPDATE Files SET file_hash = $1, file_size = $2, "
-            "last_modified = "
-            "NOW() WHERE id = $3",
-            new_hash, new_size, file_id
-        );
-        w.commit();
-
-        // std::cout << "File updated\n";
-
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    const pqxx::result res = w.exec_params(
+        "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
+        "owner_id "
+        "= $2",
+        local_path, owner_id
+    );
+    if (res.empty()) {
+        std::cout << "File doesn't exist\n";
     }
+    int file_id = res[0]["file_id"].as<int>();
+
+    w.exec_params(
+        "UPDATE Files SET file_hash = $1, file_size = $2, "
+        "last_modified = "
+        "NOW() WHERE id = $3",
+        new_hash, new_size, file_id
+    );
+    w.commit();
+
+    std::cout << "File updated\n";
 }
 
-std::vector<std::string>
-Manager::delete_user(const std::string &username, const std::string &ip) {
+std::vector<std::string> Manager::delete_user(
+    const std::string &username,
+    const std::string &ip,
+    const std::string &port
+) {
+    pqxx::work w(C);
     std::vector<std::string> deleted;
-    try {
-        pqxx::work w(C);
 
-        int user_id = get_user_id(w, ip, username);
+    int user_id = get_user_id(w, ip, port, username);
 
-        const pqxx::result deleted_files = w.exec_params(
-            "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, "
-            "DecRep_path",
-            user_id
+    const pqxx::result deleted_files = w.exec_params(
+        "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, "
+        "DecRep_path",
+        user_id
+    );
+
+    for (const auto &file : deleted_files) {
+        int file_id = file["file_id"].as<int>();
+
+        const pqxx::result file_owners = w.exec_params(
+            "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = "
+            "$1",
+            file_id
         );
 
-        for (const auto &file : deleted_files) {
-            int file_id = file["file_id"].as<int>();
+        int owners_left = file_owners[0]["remain"].as<int>();
 
-            const pqxx::result file_owners = w.exec_params(
-                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = "
-                "$1",
-                file_id
-            );
-
-            int owners_left = file_owners[0]["remain"].as<int>();
-
-            if (owners_left == 0) {
-                deleted.push_back(file["DecRep_path"].as<std::string>());
-                w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
-            }
+        if (owners_left == 0) {
+            deleted.push_back(file["DecRep_path"].as<std::string>());
+            w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
         }
-        w.exec_params("DELETE FROM Users WHERE id = $1", user_id);
-        w.commit();
-
-        std::cout << "User deleted\n";
-
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
     }
+    w.exec_params("DELETE FROM Users WHERE id = $1", user_id);
+    w.commit();
+
+    std::cout << "User deleted\n";
     return deleted;
 }
 
 bool Manager::is_users_empty() {
-    try {
-        pqxx::work w(C);
+    pqxx::work w(C);
 
-        pqxx::result result = w.exec(
-            "SELECT EXISTS (SELECT 1 FROM " + w.quote_name("users") + ")"
-        );
+    pqxx::result result = w.exec(
+        "SELECT EXISTS (SELECT 1 FROM " + w.quote_name("users") + ")"
+    );
 
-        return result[0][0].as<bool>();
-    } catch (const pqxx::sql_error &e) {
-        std::cerr << "SQL error: " << e.what() << std::endl;
-        throw;
-    }
+    return result[0][0].as<bool>();
 }
 
 nlohmann::json Manager::fetch_table_data(const std::string &table_name) {
