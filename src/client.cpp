@@ -1,48 +1,33 @@
 #include "client.hpp"
 
 namespace client {
-net::awaitable<http::response<http::dynamic_body>> do_session(
-    const std::string &host,
-    const std::string &port,
+net::awaitable<void> do_session(
+    const std::string &address,
+    int port,
     const std::string &target,
-    const std::string &event,
     int version
 ) {
     auto executor = co_await net::this_coro::executor;
-    auto resolver = net::ip::tcp::resolver{executor};
     auto stream = beast::tcp_stream{executor};
+    net::ip::tcp::endpoint e(net::ip::make_address(address), port);
 
-    // Look up the domain name
-    const auto results = co_await resolver.async_resolve(host, port);
-
-    // Set the timeout.
     stream.expires_after(std::chrono::seconds(30));
+    co_await stream.async_connect(e);
 
-    // Make the connection on the IP address we get from a lookup
-    co_await stream.async_connect(results);
-
-    // Set up an HTTP GET request message
+    // Send request
     http::request<http::string_body> req{http::verb::get, target, version};
-    req.set(http::field::host, host);
-    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    req.set("X-Event-Type", event);
-
-    // Set the timeout.
     stream.expires_after(std::chrono::seconds(30));
-
-    // Send the HTTP request to the remote host
     co_await http::async_write(stream, req);
 
-    // This buffer is used for reading and must be persisted
+    // Read response
     beast::flat_buffer buffer;
-
-    // Declare a container to hold the response
     http::response<http::dynamic_body> res;
-
-    // Receive the HTTP response
     co_await http::async_read(stream, buffer, res);
 
-    // Gracefully close the socket
+    // Handle response
+    std::cout << res << std::endl;
+
+    // Close connection
     beast::error_code ec;
     stream.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
 
@@ -52,7 +37,5 @@ net::awaitable<http::response<http::dynamic_body>> do_session(
     if (ec && ec != beast::errc::not_connected) {
         throw boost::system::system_error(ec, "shutdown");
     }
-
-    co_return res;
 }
 }  // namespace client

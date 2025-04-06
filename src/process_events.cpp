@@ -31,11 +31,20 @@ void handle_message(std::istringstream &msg) {
         case Event::ADD_FOLDER:
             /* process event code*/
             break;
+        case Event::CHANGE_FILE:
+            /* process event code*/
+            break;
         case Event::UNTRACK_FILE:
             /* process event code*/
             break;
         case Event::UNTRACK_FOLDER:
             /* process event code*/
+            break;
+        case Event::DELETE_LOCAL_FILE:
+            /* process event code*/
+            break;
+        case Event::ADD_USER:
+        /* process event code*/
             break;
         case Event::EXIT:
             /* process event code*/

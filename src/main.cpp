@@ -3,19 +3,18 @@
 #include "dec_rep.hpp"
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
-        std::cerr << "Usage: dec-rep <lisening_port> <db_port> <db_name> "
-                     "<db_password>\n"
+    if (argc != 4) {
+        std::cerr << "Usage: dec-rep <lisening_port> <db_name> <db_password>\n"
                   << "Example:\n"
-                  << "    ./dec-rep 1234 4321 mydb 123123\n";
+                  << "    ./dec-rep 1234 mydb 123123\n";
         return EXIT_FAILURE;
     }
     const auto lisening_port = static_cast<unsigned short>(std::atoi(argv[1]));
     const std::string connection_str =
         (boost::format(
-             "host=localhost port=%1% dbname=%2% user=postgres password=%3%"
+             "host=localhost port=5432 dbname=%2% user=postgres password=%3%"
          ) %
-         argv[2] % argv[3] % argv[4])
+         argv[2] % argv[3])
             .str();
 
     try {
@@ -43,15 +42,10 @@ int main(int argc, char *argv[]) {
                 std::cin >> host >> port;
                 net::co_spawn(
                     app.get_ioc(),
-                    client::do_session(host, port, "/", "connect", 11),
-                    [](std::exception_ptr e,
-                       http::response<http::dynamic_body> res) {
+                    client::do_session(host, std::stoi(port), "/", 11), // TODO
+                    [](std::exception_ptr e) {
                         if (e) {
                             std::rethrow_exception(e);
-                        }
-                        if (res.result_int() != 200) {
-                            std::cout << "Request fail: " << res.result_int()
-                                      << '\n';
                         }
                     }
                 );

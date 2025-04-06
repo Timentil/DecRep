@@ -16,11 +16,10 @@ namespace http = beast::http;
 namespace net = boost::asio;
 
 namespace client {
-net::awaitable<http::response<http::dynamic_body>> do_session(
-    const std::string &host,
-    const std::string &port,
+net::awaitable<void> do_session(
+    const std::string &address,
+    int port,
     const std::string &target,
-    const std::string &event,
     int version
 );
 }  // namespace client
