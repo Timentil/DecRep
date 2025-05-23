@@ -21,16 +21,17 @@ void Directory::print(const int level) const {
     }
 }
 
-DecRepFS::DecRepFS() : root("DecRep") {
+FS::FS() : root("DecRep") {
 }
 
 std::vector<std::string>
-DecRepFS::split_path(const std::string &path, const char delim) {
+FS::split_path(const std::string &path, const char delim) {
     std::vector<std::string> subdirs;
     std::stringstream ss(path);
     std::string subdir;
     while (std::getline(ss, subdir, delim)) {
-        if (!subdir.empty()) {  // По идее, вернёт пустую строку, если исходная
+        if (!subdir.empty()) {
+            // По идее, вернёт пустую строку, если исходная
             // начинается/заканчивается разделителем (ну или 2 разделителя
             // подряд). Думаю, можно будет убрать, когда сделаем
             // где-нибудь обработку путей
@@ -40,7 +41,7 @@ DecRepFS::split_path(const std::string &path, const char delim) {
     return subdirs;
 }
 
-void DecRepFS::add_file(const std::string &path, const std::string &file_name) {
+void FS::add_file(const std::string &path, const std::string &file_name) {
     std::vector<std::string> subdirs = split_path(path, '/');
 
     Directory *current = &root;
@@ -63,7 +64,7 @@ void DecRepFS::add_file(const std::string &path, const std::string &file_name) {
     }
 }
 
-void DecRepFS::add_folder(
+void FS::add_folder(
     const std::string &DecRep_path,
     const std::string &local_path
 ) {
@@ -109,7 +110,7 @@ void DecRepFS::add_folder(
     }
 }
 
-void DecRepFS::delete_file(const std::string &path) {
+void FS::delete_file(const std::string &path) {
     const std::vector<std::string> subdirs = split_path(path, '/');
 
     // Только если пустая строка, надо перенести отсюда
@@ -147,7 +148,7 @@ void DecRepFS::delete_file(const std::string &path) {
     current->children.erase(it);
 }
 
-void DecRepFS::delete_folder(const std::string &path) {
+void FS::delete_folder(const std::string &path) {
     const std::vector<std::string> subdirs = split_path(path, '/');
 
     Directory *current = &root;
@@ -175,17 +176,17 @@ void DecRepFS::delete_folder(const std::string &path) {
     current->children.erase(it);
 }
 
-void DecRepFS::delete_user_files(const std::vector<std::string> &file_paths) {
+void FS::delete_user_files(const std::vector<std::string> &file_paths) {
     for (const auto &file_path : file_paths) {
         delete_file(file_path);
     }
 }
 
-void DecRepFS::print_DecRepFS() const {
+void FS::print_DecRepFS() const {
     root.print(INITIAL_INDENT);
 }
 
-std::vector<std::string> DecRepFS::find(
+std::vector<std::string> FS::find(
     const std::string &name,
     const Node *node,
     const std::string &curr_path

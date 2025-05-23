@@ -1,12 +1,15 @@
 #include "client.hpp"
 
-namespace client {
+namespace Client {
 net::awaitable<void> do_session(
     const std::string &address,
     int port,
     const std::string &target,
     int version
 ) {
+    // Handle event
+    
+
     auto executor = co_await net::this_coro::executor;
     auto stream = beast::tcp_stream{executor};
     net::ip::tcp::endpoint e(net::ip::make_address(address), port);
@@ -38,4 +41,4 @@ net::awaitable<void> do_session(
         throw boost::system::system_error(ec, "shutdown");
     }
 }
-}  // namespace client
+}  // namespace Client

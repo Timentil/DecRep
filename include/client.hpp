@@ -10,18 +10,19 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 
-namespace client {
+namespace Client {
 net::awaitable<void> do_session(
     const std::string &address,
     int port,
     const std::string &target,
     int version
 );
-}  // namespace client
+}  // namespace Client
 
 #endif  // CLIENT_HPP_

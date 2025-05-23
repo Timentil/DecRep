@@ -7,30 +7,28 @@ DecRep::DecRep(
 )
     : ioc_(),
       work_guard_(net::make_work_guard(ioc_)),
-      dbManager(connection_data) {
-    // Server init
-    {
-        const auto address_ = net::ip::make_address(address);
-        const auto port_ = static_cast<unsigned short>(port);
-        const auto doc_root_ = std::make_shared<std::string>("/");
+      db_manager(connection_data),
+      event_handler(db_manager, dec_rep_fs),
+      server(event_handler) {
+    const auto address_ = net::ip::make_address(address);
+    const auto port_ = static_cast<unsigned short>(port);
 
-        // Spawn a listening port
-        net::co_spawn(
-            ioc_,
-            server::do_listen(
-                net::ip::tcp::endpoint{address_, port_}, doc_root_
-            ),
-            [](std::exception_ptr e) {
-                if (e) {
-                    try {
-                        std::rethrow_exception(e);
-                    } catch (std::exception const &e) {
-                        std::cerr << "Error: " << e.what() << std::endl;
-                    }
+    // Spawn a listening port
+    net::co_spawn(
+        ioc_, server.do_listen(net::ip::tcp::endpoint{address_, port_}),
+        [](std::exception_ptr e) {
+            if (e) {
+                try {
+                    std::rethrow_exception(e);
+                } catch (std::exception const &e) {
+                    std::cerr << "Error: " << e.what() << std::endl;
                 }
             }
-        );
-    }
+        }
+    );
+
+    // Construct dec_rep_fs from DB
+    // soon...
 }
 
 DecRep::~DecRep() {
@@ -47,12 +45,4 @@ void DecRep::stop() {
     if (thread_.joinable()) {
         thread_.join();
     }
-}
-
-net::io_context &DecRep::get_ioc() {
-    return ioc_;
-}
-
-DBManager::Manager &DecRep::get_dbManager() {
-    return dbManager;
 }

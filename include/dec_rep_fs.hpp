@@ -32,9 +32,9 @@ struct Directory final : Node {
     void print(int level) const override;
 };
 
-struct DecRepFS {
+struct FS {
     Directory root;
-    DecRepFS();
+    FS();
 
     static std::vector<std::string>
     split_path(const std::string &path, char delim);

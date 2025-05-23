@@ -2,11 +2,10 @@
 #define PROCESS_EVENTS_HPP_
 
 #include <unordered_map>
-#include "dec_rep_fwd.hpp"
+#include "db_manager.hpp"
+#include "dec_rep_fs.hpp"
 
-namespace process_events {
-
-std::string get_name(const std::string &full_path);
+namespace Events {
 
 enum class Event {
     CONNECT,
@@ -33,74 +32,78 @@ const std::unordered_map<std::string, Event> events = {
     {"exit", Event::EXIT},
     {"download", Event::DOWNLOAD}};
 
+std::string get_name(const std::string &full_path);
+
 Event get_event(const std::string &event);
 
 void handle_message(std::istringstream &msg);
 
-void connect(DecRep &app, std::istringstream &msg);
+class EventHandler {
+private:
+    DBManager::Manager &dbManager;
+    DecRepFS::FS &decRepFS;
 
-void add_file(
-    DecRep &app,
-    const std::string &local_file_path,
-    const std::string &DecRep_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
+public:
+    EventHandler(DBManager::Manager &db, DecRepFS::FS &fs);
 
-void add_folder(
-    DecRep &app,
-    const std::string &local_folder_path,
-    const std::string &DecRep_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
+    void connect(std::istringstream &msg);
 
-void add_user(
-    DecRep &app,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
+    void add_file(
+        const std::string &local_file_path,
+        const std::string &DecRep_path,
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
 
-void update_file(
-    DecRep &app,
-    const std::string &local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port,
-    std::string &new_hash,  //??
-    std::size_t &new_size   //??
-);
+    void add_folder(
+        const std::string &local_folder_path,
+        const std::string &DecRep_path,
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
 
-void update_local_path(
-    DecRep &app,
-    const std::string &old_local_path,  // Может быть заменен
-    const std::string &new_local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
+    void add_user(
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
 
-void untrack_file(DecRep &app, const std::string &full_DecRep_path);
+    void update_file(
+        const std::string &local_path,
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port,
+        std::string &new_hash,  //??
+        std::size_t &new_size   //??
+    );
 
-void untrack_folder(DecRep &app, const std::string &DecRep_path);
+    void update_local_path(
+        const std::string &old_local_path,  // Может быть заменен
+        const std::string &new_local_path,
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
 
-void delete_local_file(
-    DecRep &app,
-    const std::string &local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
+    void untrack_file(const std::string &full_DecRep_path);
 
-void delete_user(
-    DecRep &app,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
-);
-};  // namespace process_events
+    void untrack_folder(const std::string &DecRep_path);
+
+    void delete_local_file(
+        const std::string &local_path,
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
+
+    void delete_user(
+        const std::string &username,
+        const std::string &ip,
+        const std::string &port
+    );
+};
+};  // namespace Events
 
 #endif  // PROCESS_EVENTS_HPP_

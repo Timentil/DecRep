@@ -11,13 +11,15 @@
 // construct DecRepFS from database
 // run file_watcher
 class DecRep {
+public:
     net::io_context ioc_;
     net::executor_work_guard<net::io_context::executor_type> work_guard_;
     std::thread thread_;
-    DBManager::Manager dbManager;
-    DecRepFS::DecRepFS decRepFS;
+    DBManager::Manager db_manager;
+    DecRepFS::FS dec_rep_fs;
+    Events::EventHandler event_handler;
+    Server::HTTPServer server;
 
-public:
     DecRep(
         const std::string &address,
         int port,
@@ -29,79 +31,6 @@ public:
     void run();
 
     void stop();
-
-    net::io_context &get_ioc();
-
-    DBManager::Manager &get_dbManager();
-
-    friend void process_events::connect(DecRep &app, std::istringstream &msg);
-
-    friend void process_events::add_file(
-        DecRep &app,
-        const std::string &local_file_path,
-        const std::string &DecRep_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
-
-    friend void process_events::add_folder(
-        DecRep &app,
-        const std::string &local_folder_path,
-        const std::string &DecRep_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
-
-    friend void process_events::add_user(
-        DecRep &app,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
-
-    friend void process_events::update_file(
-        DecRep &app,
-        const std::string &local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port,
-        std::string &new_hash,
-        std::size_t &new_size
-    );
-
-    friend void process_events::update_local_path(
-        DecRep &app,
-        const std::string &old_local_path,
-        const std::string &new_local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
-
-    friend void process_events::untrack_file(
-        DecRep &app,
-        const std::string &full_DecRep_path
-    );
-
-    friend void
-    process_events::untrack_folder(DecRep &app, const std::string &DecRep_path);
-
-    friend void process_events::delete_local_file(
-        DecRep &app,
-        const std::string &local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
-
-    friend void process_events::delete_user(
-        DecRep &app,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
 };
 
 #endif  // DEC_REP_HPP_

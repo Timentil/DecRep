@@ -1,7 +1,6 @@
 #ifndef SERVER_HPP_
 #define SERVER_HPP_
 
-#include <algorithm>
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/io_context.hpp>
@@ -10,6 +9,8 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/config.hpp>
+
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -17,39 +18,33 @@
 #include <thread>
 #include <vector>
 
+#include "process_events.hpp"
+
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 
-namespace server {
-// Return a reasonable mime type based on the extension of a file.
-beast::string_view mime_type(beast::string_view path);
+namespace Server {
+class HTTPServer {
+private:
+    Events::EventHandler &handler;
 
-// Append an HTTP rel-path to a local filesystem path.
-// The returned path is normalized for the platform.
-std::string path_cat(beast::string_view base, beast::string_view path);
+public:
+    HTTPServer(Events::EventHandler &handler_);
+    
+    // Return a response for the given request.
+    template <class Body, class Allocator>
+    http::message_generator handle_request(
+        http::request<Body, http::basic_fields<Allocator>> &&req,
+        const net::ip::tcp::endpoint &remote_ep
+    );
 
-// Return a response for the given request.
-//
-// The concrete type of the response message (which depends on the
-// request), is type-erased in message_generator.
-template <class Body, class Allocator>
-http::message_generator handle_request(
-    beast::string_view doc_root,
-    http::request<Body, http::basic_fields<Allocator>> &&req
-);
+    // Handles an HTTP server connection
+    net::awaitable<void> do_session(beast::tcp_stream stream);
 
-// Handles an HTTP server connection
-net::awaitable<void> do_session(
-    beast::tcp_stream stream,
-    std::shared_ptr<std::string const> doc_root
-);
-
-// Accepts incoming connections and launches the sessions
-net::awaitable<void> do_listen(
-    net::ip::tcp::endpoint endpoint,
-    std::shared_ptr<std::string const> doc_root
-);
-}  // namespace server
+    // Accepts incoming connections and launches the sessions
+    net::awaitable<void> do_listen(net::ip::tcp::endpoint endpoint);
+};
+};  // namespace Server
 
 #endif  // SERVER_HPP_
