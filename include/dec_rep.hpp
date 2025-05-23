@@ -5,6 +5,7 @@
 #include "dec_rep_fs.hpp"
 #include "process_events.hpp"
 #include "server.hpp"
+#include "client.hpp"
 
 // run database
 // run server (for lisening)
@@ -19,6 +20,7 @@ public:
     DecRepFS::FS dec_rep_fs;
     Events::EventHandler event_handler;
     Server::HTTPServer server;
+    Client::HTTPClient client;
 
     DecRep(
         const std::string &address,

@@ -45,19 +45,22 @@ http::message_generator HTTPServer::handle_request(
     }
 
     std::string event = get_next_token();
+    std::string row_params(target);
+    row_params += '/' + remote_ep.address().to_string();
+    row_params += '/' + std::to_string(remote_ep.port());
+    std::vector<std::string_view> params = Events::split_str(target);
 
     // Process event and handle target
     if (event == "get_db_data") {
+        bool is_event_success = handler.func_map["add_user"](params);
+        
         std::string json_str = handler.get_db_data();
-        if (json_str.empty()) {
-            return response(http::status::bad_request, "json_str is empty");
+        
+        if (json_str.empty() || is_event_success) {
+            return response(http::status::bad_request, "json_str is empty or event did'n succsses");
         }
         return response(http::status::accepted, json_str);
     } else {
-        std::string row_params(target);
-        row_params += '/' + remote_ep.address().to_string();
-        row_params += '/' + std::to_string(remote_ep.port());
-        std::vector<std::string_view> params = Events::split_str(target);
         bool is_event_success = handler.func_map[event](params);
 
         if (!is_event_success) {

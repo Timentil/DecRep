@@ -9,7 +9,7 @@ DecRep::DecRep(
       work_guard_(net::make_work_guard(ioc_)),
       db_manager(connection_data),
       event_handler(db_manager, dec_rep_fs),
-      server(event_handler) {
+      server(event_handler), client(event_handler) {
     const auto address_ = net::ip::make_address(address);
     const auto port_ = static_cast<unsigned short>(port);
 

@@ -44,16 +44,16 @@ int main(int argc, char *argv[]) {
                 std::cin >> ip >> port;
                 net::co_spawn(
                     app.ioc_,
-                    Client::do_session(ip, std::stoi(port), "/", 11),  // TODO
+                    app.client.do_session(ip, std::stoi(port), "events/get_db_data/" + user_name, 11),
                     [](std::exception_ptr e) {
                         if (e) {
                             std::rethrow_exception(e);
                         }
                     }
                 );
+            } else {
+                app.db_manager.insert_into_Users(user_name, "0.0.0.0", "1234"); // TODO
             }
-
-            app.event_handler.add_user(user_name, "0.0.0.0", "1234");  // TODO
         }
 
         std::cout << "App is running...\n"
