@@ -1,42 +1,21 @@
 #ifndef PROCESS_EVENTS_HPP_
 #define PROCESS_EVENTS_HPP_
 
+#include <functional>
+#include <string_view>
 #include <unordered_map>
+#include <vector>
+#include <boost/json/src.hpp>
 #include "db_manager.hpp"
 #include "dec_rep_fs.hpp"
 
+namespace json = boost::json;
+
 namespace Events {
-
-enum class Event {
-    CONNECT,
-    ADD_FILE,
-    ADD_FOLDER,
-    CHANGE_FILE,
-    UNTRACK_FILE,
-    UNTRACK_FOLDER,
-    DELETE_LOCAL_FILE,
-    ADD_USER,
-    EXIT,
-    DOWNLOAD,
-    INVALID
-};
-
-const std::unordered_map<std::string, Event> events = {
-    {"connect", Event::CONNECT},
-    {"add_file", Event::ADD_FILE},
-    {"add_folder", Event::ADD_FOLDER},
-    {"change_file", Event::CHANGE_FILE},
-    {"untrack_file", Event::UNTRACK_FILE},
-    {"untrack_folder", Event::UNTRACK_FOLDER},
-    {"delete_local_file", Event::DELETE_LOCAL_FILE},
-    {"exit", Event::EXIT},
-    {"download", Event::DOWNLOAD}};
 
 std::string get_name(const std::string &full_path);
 
-Event get_event(const std::string &event);
-
-void handle_message(std::istringstream &msg);
+std::vector<std::string_view> split_str(std::string_view str);
 
 class EventHandler {
 private:
@@ -44,65 +23,71 @@ private:
     DecRepFS::FS &decRepFS;
 
 public:
+    std::unordered_map<
+        std::string,
+        std::function<bool(const std::vector<std::string_view> &)>>
+        func_map;
+
     EventHandler(DBManager::Manager &db, DecRepFS::FS &fs);
 
-    void connect(std::istringstream &msg);
+    std::string get_db_data();
 
-    void add_file(
-        const std::string &local_file_path,
-        const std::string &DecRep_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    void import_data(const std::string &json_str);
 
-    void add_folder(
-        const std::string &local_folder_path,
-        const std::string &DecRep_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    // local_file_path,
+    // DecRep_path,
+    // username,
+    // ip,
+    // port
+    bool add_file(const std::vector<std::string_view> &);
 
-    void add_user(
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    // local_folder_path,
+    // DecRep_path,
+    // username,
+    // ip,
+    // port
+    bool add_folder(const std::vector<std::string_view> &);
 
-    void update_file(
-        const std::string &local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port,
-        std::string &new_hash,  //??
-        std::size_t &new_size   //??
-    );
+    // username,
+    // ip,
+    // port
+    bool add_user(const std::vector<std::string_view> &);
 
-    void update_local_path(
-        const std::string &old_local_path,  // Может быть заменен
-        const std::string &new_local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    // local_path,
+    // username,
+    // new_hash,  //??
+    // new_size,   //??
+    // ip,
+    // port
+    bool update_file(const std::vector<std::string_view> &);
 
-    void untrack_file(const std::string &full_DecRep_path);
+    // old_local_path,  // Может быть заменен
+    // new_local_path,
+    // username,
+    // ip,
+    // port
+    bool update_local_path(const std::vector<std::string_view> &);
 
-    void untrack_folder(const std::string &DecRep_path);
+    // full_DecRep_path,
+    // ip,
+    // port
+    bool untrack_file(const std::vector<std::string_view> &);
 
-    void delete_local_file(
-        const std::string &local_path,
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    // DecRep_path,
+    // ip,
+    // port
+    bool untrack_folder(const std::vector<std::string_view> &);
 
-    void delete_user(
-        const std::string &username,
-        const std::string &ip,
-        const std::string &port
-    );
+    // local_path,
+    // username,
+    // ip,
+    // port
+    bool delete_local_file(const std::vector<std::string_view> &);
+
+    // username,
+    // ip,
+    // port
+    bool delete_user(const std::vector<std::string_view> &);
 };
 };  // namespace Events
 

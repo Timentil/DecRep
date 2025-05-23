@@ -3,11 +3,12 @@
 
 #include <filesystem>
 #include <iostream>
-#include <nlohmann/json.hpp>
+#include <boost/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 
 namespace fs = std::filesystem;
+namespace json = boost::json;
 
 namespace DBManager {
 class Manager {
@@ -26,10 +27,27 @@ public:
         const std::string &username
     );
 
-    void add_into_Users(
+    void insert_into_Users(
         const std::string &username,
         const std::string &ip,
-        const std::string &port
+        const std::string &port,
+        const std::string &first_conn_time = "NOW()"
+    );
+
+    void insert_into_Files(
+        const std::string &file_name,
+        const std::string &file_size,
+        const std::string &file_hash,
+        const std::string &addition_time,
+        const std::string &last_modified,
+        const std::string &DecRep_path,
+        const std::string &author_id
+    );
+
+    void insert_into_FileOwners(
+        const std::string &owner_id,
+        const std::string &file_id,
+        const std::string &local_path
     );
 
     static void add_file_template(
@@ -95,9 +113,9 @@ public:
 
     bool is_users_empty();
 
-    nlohmann::json fetch_table_data(const std::string &table_name);
+    json::value fetch_table_data(const std::string &table_name);
 
-    nlohmann::json get_all_data();
+    json::object get_all_data();
 };
 }  // namespace DBManager
 

@@ -9,12 +9,15 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/config.hpp>
+#include <boost/json/src.hpp>
 
 #include <algorithm>
 #include <cstdlib>
+#include <stdexcept>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -23,6 +26,7 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
+namespace json = boost::json;
 
 namespace Server {
 class HTTPServer {
@@ -31,11 +35,10 @@ private:
 
 public:
     HTTPServer(Events::EventHandler &handler_);
-    
+
     // Return a response for the given request.
-    template <class Body, class Allocator>
     http::message_generator handle_request(
-        http::request<Body, http::basic_fields<Allocator>> &&req,
+        http::request<http::string_body> &&req,
         const net::ip::tcp::endpoint &remote_ep
     );
 

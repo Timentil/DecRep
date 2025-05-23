@@ -34,10 +34,11 @@ int Manager::get_user_id(
     }
 }
 
-void Manager::add_into_Users(
+void Manager::insert_into_Users(
     const std::string &username,
     const std::string &ip,
-    const std::string &port
+    const std::string &port,
+    const std::string &first_conn_time = "NOW()"
 ) {
     pqxx::work w(C);
 
@@ -48,14 +49,48 @@ void Manager::add_into_Users(
     if (res.empty()) {
         w.exec_params(
             "INSERT INTO Users (ip, port, username, first_connection_time) "
-            "VALUES ($1, $2, $3, NOW())",
-            ip, port, username
+            "VALUES ($1, $2, $3, $4)",
+            ip, port, username, first_conn_time
         );
         w.commit();
         std::cout << "User added successfully\n";
     } else {
         std::cout << "User already exists\n";
     }
+}
+
+void Manager::insert_into_Files(
+    const std::string &file_name,
+    const std::string &file_size,
+    const std::string &file_hash,
+    const std::string &addition_time,
+    const std::string &last_modified,
+    const std::string &DecRep_path,
+    const std::string &author_id
+) {
+    pqxx::work w(C);
+
+    w.exec_params(
+        "INSERT INTO Files (file_name, file_size, file_hash, addition_time, last_modified, DecRep_path, author_id) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        file_name, file_size, file_hash, addition_time, last_modified, DecRep_path, author_id
+    );
+    w.commit();
+}
+
+void Manager::insert_into_FileOwners(
+    const std::string &owner_id,
+    const std::string &file_id,
+    const std::string &local_path
+) {
+    pqxx::work w(C);
+
+    w.exec_params(
+        "INSERT INTO FileOwners (owner_id, file_id, local_path) "
+        "VALUES ($1, $2, $3)",
+        owner_id, file_id, local_path
+    );
+    w.commit();
 }
 
 void Manager::add_file_template(
@@ -355,27 +390,30 @@ bool Manager::is_users_empty() {
     return result[0][0].as<bool>();
 }
 
-nlohmann::json Manager::fetch_table_data(const std::string &table_name) {
-    nlohmann::json table_json;
+json::value Manager::fetch_table_data(const std::string &table_name) {
+    json::array table_json;
     pqxx::work w(C);
     pqxx::result result = w.exec("SELECT * FROM " + w.quote_name(table_name));
 
     for (const auto &row : result) {
-        nlohmann::json row_json;
+        json::array row_json;
         for (const auto &field : row) {
-            row_json.push_back(field.c_str());
+            row_json.push_back(json::value(field.c_str()));
         }
         table_json.push_back(row_json);
     }
     w.commit();
+    
     return table_json;
 }
 
-nlohmann::json Manager::get_all_data() {
-    nlohmann::json response_json;
+json::object Manager::get_all_data() {
+    json::object response_json;
+
     response_json["users"] = fetch_table_data("users");
     response_json["files"] = fetch_table_data("files");
     response_json["filesowners"] = fetch_table_data("filesowners");
+
     return response_json;
 }
 }  // namespace DBManager

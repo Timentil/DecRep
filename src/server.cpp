@@ -2,53 +2,73 @@
 
 namespace Server {
 
-template <class Body, class Allocator>
+HTTPServer::HTTPServer(Events::EventHandler &handler_) : handler(handler_){};
+
 http::message_generator HTTPServer::handle_request(
-    http::request<Body, http::basic_fields<Allocator>> &&req,
+    http::request<http::string_body> &&req,
     const net::ip::tcp::endpoint &remote_ep
 ) {
-    // Returns a bad request response
-    const auto bad_request = [&req](beast::string_view why) {
-        http::response<http::string_body> res{
-            http::status::bad_request, req.version()};
-        res.keep_alive(req.keep_alive());
-        res.body() = std::string(why);
-        res.prepare_payload();
-        return res;
-    };
+    // Returns a simple response
+    const auto response =
+        [&req](http::status status, std::string_view msg = "") {
+            http::response<http::string_body> res{status, req.version()};
+            res.keep_alive(req.keep_alive());
+            if (msg != "") {
+                res.body() = std::string(msg);
+            }
+            res.prepare_payload();
+            return res;
+        };
 
     // Make sure we can handle the method
     if (req.method() != http::verb::get) {
-        return bad_request("Unknown HTTP-method");
+        return response(http::status::bad_request, "Unknown HTTP-method");
     }
 
-    std::istringstream iss(req.target());
-    std::stringstream msg{};
+    std::string_view target = req.target();
+
     auto get_next_token = [&]() {
+        size_t pos = target.find('/');
         std::string token{};
-        getline(oss, token, '/');
+        if (pos != target.npos) {
+            token = target.substr(0, pos);
+            target.remove_prefix(pos + 1);
+        } else {
+            throw std::logic_error("[server] get_next_token find npos");
+        }
         return token;
     };
 
-    // Handle target
-    if (get_next_token == "events") {
-        msg << get_next_token;
-        msg << remote_ep.address().to_string();
-        msg << remote_ep.port();
-        handle_message(msg);
-    } else {
-        bad_request("Unknown request-target");
+    // For now we can handle only "events"
+    if (get_next_token() != "events") {
+        return response(http::status::bad_request, "Unknown request-target");
     }
 
-    // Respond to GET request
-    http::response<http::file_body> res{
-        std::piecewise_construct, std::make_tuple(std::move(body)),
-        std::make_tuple(http::status::ok, req.version())};
-    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, mime_type(path));
-    res.content_length(size);
-    res.keep_alive(req.keep_alive());
-    return res;
+    std::string event = get_next_token();
+
+    // Process event and handle target
+    if (event == "get_db_data") {
+        std::string json_str = handler.get_db_data();
+        if (json_str.empty()) {
+            return response(http::status::bad_request, "json_str is empty");
+        }
+        return response(http::status::accepted, json_str);
+    } else {
+        std::string row_params(target);
+        row_params += '/' + remote_ep.address().to_string();
+        row_params += '/' + std::to_string(remote_ep.port());
+        std::vector<std::string_view> params = Events::split_str(target);
+        bool is_event_success = handler.func_map[event](params);
+
+        if (!is_event_success) {
+            return response(
+                http::status::bad_request,
+                "Faled to do event, uncorrect args count"
+            );
+        } else {
+            return response(http::status::accepted, "OK");
+        }
+    }
 }
 
 net::awaitable<void> HTTPServer::do_session(beast::tcp_stream stream) {
