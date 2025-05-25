@@ -1,38 +1,37 @@
 #ifndef DEC_REP_HPP_
 #define DEC_REP_HPP_
 
+#include "client.hpp"
 #include "db_manager.hpp"
 #include "dec_rep_fs.hpp"
 #include "process_events.hpp"
 #include "server.hpp"
-#include "client.hpp"
 
-// run database
-// run server (for lisening)
-// construct DecRepFS from database
-// run file_watcher
+// - connect to database
+// - run server
+// - construct DecRepFS from database
+// - run file_watcher
 class DecRep {
 public:
-    net::io_context ioc_;
-    net::executor_work_guard<net::io_context::executor_type> work_guard_;
-    std::thread thread_;
-    DBManager::Manager db_manager;
-    DecRepFS::FS dec_rep_fs;
-    Events::EventHandler event_handler;
-    Server::HTTPServer server;
-    Client::HTTPClient client;
+    net::io_context m_ioc;
+    net::executor_work_guard<net::io_context::executor_type> m_work_guard;
+    std::jthread m_jthread;
 
-    DecRep(
-        const std::string &address,
-        int port,
-        const std::string &connection_data
-    );
+    DBManager::Manager m_db_manager;
+    DecRepFS::FS m_dec_rep_fs;
+    Events::EventHandler m_event_handler;
+    Server::HTTPServer m_server;
+    Client::HTTPClient m_client;
 
-    ~DecRep();
+    DecRep(const std::string &address, int port, const std::string &connection_data);
+
+    void start_server(const std::string &address, const int port);
 
     void run();
 
     void stop();
+
+    ~DecRep();
 };
 
-#endif  // DEC_REP_HPP_
+#endif // DEC_REP_HPP_

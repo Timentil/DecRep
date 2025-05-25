@@ -1,21 +1,14 @@
 #include "dec_rep.hpp"
 
-DecRep::DecRep(
-    const std::string &address,
-    int port,
-    const std::string &connection_data
-)
-    : ioc_(),
-      work_guard_(net::make_work_guard(ioc_)),
-      db_manager(connection_data),
-      event_handler(db_manager, dec_rep_fs),
-      server(event_handler), client(event_handler) {
-    const auto address_ = net::ip::make_address(address);
-    const auto port_ = static_cast<unsigned short>(port);
+void DecRep::start_server(const std::string &address, const int port)
+{
+    auto endpoint
+        = net::ip::tcp::endpoint { net::ip::make_address(address),
+                                   static_cast<unsigned short>(port) };
 
     // Spawn a listening port
     net::co_spawn(
-        ioc_, server.do_listen(net::ip::tcp::endpoint{address_, port_}),
+        m_ioc, m_server.do_listen(endpoint),
         [](std::exception_ptr e) {
             if (e) {
                 try {
@@ -26,23 +19,36 @@ DecRep::DecRep(
             }
         }
     );
+}
 
-    // Construct dec_rep_fs from DB
+DecRep::DecRep(const std::string &address, int port, const std::string &connection_data)
+    : m_ioc()
+    , m_work_guard(net::make_work_guard(m_ioc))
+    , m_db_manager(connection_data)
+    ,
+    // TODO defailt init dec_rep_fs
+    m_event_handler(m_db_manager, m_dec_rep_fs)
+    , m_server(m_event_handler)
+    , m_client(m_event_handler)
+{
+    start_server(address, port);
+    // construct_dec_rep_fs();
+    // start_file_watcher();
     // soon...
 }
 
-DecRep::~DecRep() {
+DecRep::~DecRep()
+{
     stop();
 }
 
-void DecRep::run() {
-    thread_ = std::thread([this] { ioc_.run(); });
+void DecRep::run()
+{
+    m_jthread = std::jthread([this] { m_ioc.run(); });
 }
 
-void DecRep::stop() {
-    work_guard_.reset();
-    ioc_.stop();
-    if (thread_.joinable()) {
-        thread_.join();
-    }
+void DecRep::stop()
+{
+    m_work_guard.reset();
+    m_ioc.stop();
 }

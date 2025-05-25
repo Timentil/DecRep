@@ -4,7 +4,8 @@ namespace fs = std::filesystem;
 
 namespace Events {
 
-std::string get_name(const std::string &full_path) {
+std::string get_name(const std::string &full_path)
+{
     fs::path p(full_path);
     while (!p.empty() && p.filename().empty()) {
         p = p.parent_path();
@@ -12,7 +13,8 @@ std::string get_name(const std::string &full_path) {
     return p.filename().string();
 }
 
-std::vector<std::string_view> split_str(std::string_view str) {
+std::vector<std::string_view> split_str(std::string_view str)
+{
     std::vector<std::string_view> result;
     while (true) {
         size_t pos = str.find('/');
@@ -29,27 +31,31 @@ std::vector<std::string_view> split_str(std::string_view str) {
 }
 
 EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs)
-    : dbManager(db), decRepFS(fs) {
+    : dbManager(db)
+    , decRepFS(fs)
+{
     func_map = {
-        {"add_file", [this](const auto &params) { return this->add_file(params); }},
-        {"add_folder", [this](const auto &params) { return this->add_folder(params); }},
-        {"change_file", [this](const auto &params) { return this->update_file(params); }},
-        {"untrack_file", [this](const auto &params) { return this->untrack_file(params); }},
-        {"untrack_folder", [this](const auto &params) { return this->untrack_folder(params); }},
-        {"delete_local_file", [this](const auto &params) { return this->delete_local_file(params); }}
+        { "add_file", [this](const auto &params) { return this->add_file(params); } },
+        { "add_folder", [this](const auto &params) { return this->add_folder(params); } },
+        { "change_file", [this](const auto &params) { return this->update_file(params); } },
+        { "untrack_file", [this](const auto &params) { return this->untrack_file(params); } },
+        { "untrack_folder", [this](const auto &params) { return this->untrack_folder(params); } },
+        { "delete_local_file", [this](const auto &params) { return this->delete_local_file(params); } }
     };
 };
 
-std::string EventHandler::get_db_data() {
+std::string EventHandler::get_db_data()
+{
     return json::serialize(dbManager.get_all_data());
 }
 
-void EventHandler::import_data(const std::string &json_str) {
+void EventHandler::import_data(const std::string &json_str)
+{
     json::value jv = json::parse(json_str);
     json::object root = jv.as_object();
 
     // Users
-    for (const auto& user_val : root["users"].as_array()) {
+    for (const auto &user_val : root["users"].as_array()) {
         json::object user = user_val.as_object();
         dbManager.insert_into_Users(
             user["username"].as_string().c_str(),
@@ -60,7 +66,7 @@ void EventHandler::import_data(const std::string &json_str) {
     }
 
     // Files
-    for (const auto& file_val : root["files"].as_array()) {
+    for (const auto &file_val : root["files"].as_array()) {
         json::object file = file_val.as_object();
         dbManager.insert_into_Files(
             file["file_name"].as_string().c_str(),
@@ -74,7 +80,7 @@ void EventHandler::import_data(const std::string &json_str) {
     }
 
     // FileOwners
-    for (const auto& fo_val : root["file_owners"].as_array()) {
+    for (const auto &fo_val : root["file_owners"].as_array()) {
         json::object fo = fo_val.as_object();
         dbManager.insert_into_FileOwners(
             fo["owner_id"].as_string().c_str(),
@@ -84,7 +90,8 @@ void EventHandler::import_data(const std::string &json_str) {
     }
 }
 
-bool EventHandler::add_file(const std::vector<std::string_view> &params) {
+bool EventHandler::add_file(const std::vector<std::string_view> &params)
+{
     if (params.size() != 5) {
         std::cout << "Invalid count of ars in func add_file\n";
         return 0;
@@ -105,7 +112,8 @@ bool EventHandler::add_file(const std::vector<std::string_view> &params) {
     return 1;
 }
 
-bool EventHandler::add_folder(const std::vector<std::string_view> &params) {
+bool EventHandler::add_folder(const std::vector<std::string_view> &params)
+{
     if (params.size() != 5) {
         std::cout << "Invalid count of ars in func add_folder\n";
         return 0;
@@ -124,7 +132,8 @@ bool EventHandler::add_folder(const std::vector<std::string_view> &params) {
     return 1;
 }
 
-bool EventHandler::add_user(const std::vector<std::string_view> &params) {
+bool EventHandler::add_user(const std::vector<std::string_view> &params)
+{
     if (params.size() != 3) {
         std::cout << "Invalid count of ars in func add_user\n";
         return 0;
@@ -139,7 +148,8 @@ bool EventHandler::add_user(const std::vector<std::string_view> &params) {
     return 1;
 }
 
-bool EventHandler::update_file(const std::vector<std::string_view> &params) {
+bool EventHandler::update_file(const std::vector<std::string_view> &params)
+{
     if (params.size() != 6) {
         std::cout << "Invalid count of ars in func update_file\n";
         return 0;
@@ -158,7 +168,8 @@ bool EventHandler::update_file(const std::vector<std::string_view> &params) {
 }
 
 bool EventHandler::update_local_path(const std::vector<std::string_view> &params
-) {
+)
+{
     if (params.size() != 5) {
         std::cout << "Invalid count of ars in func update_local_file\n";
         return 0;
@@ -177,7 +188,8 @@ bool EventHandler::update_local_path(const std::vector<std::string_view> &params
     return 1;
 }
 
-bool EventHandler::untrack_file(const std::vector<std::string_view> &params) {
+bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
+{
     if (params.size() != 3) {
         std::cout << "Invalid count of ars in func untrack_file\n";
         return 0;
@@ -191,7 +203,8 @@ bool EventHandler::untrack_file(const std::vector<std::string_view> &params) {
     return 1;
 }
 
-bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) {
+bool EventHandler::untrack_folder(const std::vector<std::string_view> &params)
+{
     if (params.size() != 3) {
         std::cout << "Invalid count of ars in func untrack_folder\n";
         return 0;
@@ -206,7 +219,8 @@ bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) {
 }
 
 bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
-) {
+)
+{
     if (params.size() != 4) {
         std::cout << "Invalid count of ars in func delete_local_file\n";
         return 0;
@@ -217,8 +231,7 @@ bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
     const std::string ip(params[2]);
     const std::string port(params[3]);
 
-    const std::string delete_res =
-        dbManager.delete_local_file(local_path, username, ip, port);
+    const std::string delete_res = dbManager.delete_local_file(local_path, username, ip, port);
     if (!delete_res.empty()) {
         decRepFS.delete_file(delete_res);
     }
@@ -226,7 +239,8 @@ bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
     return 1;
 }
 
-bool EventHandler::delete_user(const std::vector<std::string_view> &params) {
+bool EventHandler::delete_user(const std::vector<std::string_view> &params)
+{
     if (params.size() != 3) {
         std::cout << "Invalid count of ars in func delete_user\n";
         return 0;
@@ -236,10 +250,9 @@ bool EventHandler::delete_user(const std::vector<std::string_view> &params) {
     const std::string ip(params[1]);
     const std::string port(params[2]);
 
-    const std::vector<std::string> deleted_files =
-        dbManager.delete_user(username, ip, port);
+    const std::vector<std::string> deleted_files = dbManager.delete_user(username, ip, port);
     decRepFS.delete_user_files(deleted_files);
 
     return 1;
 }
-}  // namespace Events
+} // namespace Events

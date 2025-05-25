@@ -1,6 +1,8 @@
 #ifndef SERVER_HPP_
 #define SERVER_HPP_
 
+#include "process_events.hpp"
+#include <algorithm>
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/io_context.hpp>
@@ -10,18 +12,14 @@
 #include <boost/beast/version.hpp>
 #include <boost/config.hpp>
 #include <boost/json/src.hpp>
-
-#include <algorithm>
 #include <cstdlib>
-#include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <vector>
-
-#include "process_events.hpp"
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -46,8 +44,8 @@ public:
     net::awaitable<void> do_session(beast::tcp_stream stream);
 
     // Accepts incoming connections and launches the sessions
-    net::awaitable<void> do_listen(net::ip::tcp::endpoint endpoint);
+    net::awaitable<void> do_listen(const net::ip::tcp::endpoint &endpoint);
 };
-};  // namespace Server
+}; // namespace Server
 
-#endif  // SERVER_HPP_
+#endif // SERVER_HPP_

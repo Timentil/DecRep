@@ -1,13 +1,13 @@
 #ifndef PROCESS_EVENTS_HPP_
 #define PROCESS_EVENTS_HPP_
 
+#include "db_manager.hpp"
+#include "dec_rep_fs.hpp"
+#include <boost/json/src.hpp>
 #include <functional>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
-#include <boost/json/src.hpp>
-#include "db_manager.hpp"
-#include "dec_rep_fs.hpp"
 
 namespace json = boost::json;
 
@@ -89,6 +89,6 @@ public:
     // port
     bool delete_user(const std::vector<std::string_view> &);
 };
-};  // namespace Events
+}; // namespace Events
 
-#endif  // PROCESS_EVENTS_HPP_
+#endif // PROCESS_EVENTS_HPP_

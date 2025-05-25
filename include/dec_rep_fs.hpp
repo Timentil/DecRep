@@ -58,6 +58,6 @@ struct FS {
         const std::string &curr_path = ""
     ) const;
 };
-}  // namespace DecRepFS
+} // namespace DecRepFS
 
-#endif  // DEC_REP_FS_HPP_
+#endif // DEC_REP_FS_HPP_

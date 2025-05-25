@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP_
 #define CLIENT_HPP_
 
+#include "process_events.hpp"
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/io_context.hpp>
@@ -9,10 +10,8 @@
 #include <boost/beast/version.hpp>
 #include <cstdlib>
 #include <iostream>
-#include <string>
 #include <sstream>
-
-#include "process_events.hpp"
+#include <string>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -34,6 +33,6 @@ public:
         int version
     );
 };
-}  // namespace Client
+} // namespace Client
 
-#endif  // CLIENT_HPP_
+#endif // CLIENT_HPP_

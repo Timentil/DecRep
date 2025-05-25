@@ -5,13 +5,16 @@ namespace fs = std::filesystem;
 
 namespace DBManager {
 
-Manager::Manager(const std::string &connection_data) : C(connection_data) {
+Manager::Manager(const std::string &connection_data)
+    : C(connection_data)
+{
     if (!C.is_open()) {
         std::cerr << "Error opening database connection" << std::endl;
     }
 }
 
-Manager::~Manager() {
+Manager::~Manager()
+{
     if (C.is_open()) {
         C.disconnect();
     }
@@ -22,7 +25,8 @@ int Manager::get_user_id(
     const std::string &ip,
     const std::string &port,
     const std::string &username
-) {
+)
+{
     const pqxx::result user_id = w.exec_params(
         "SELECT id FROM Users WHERE ip = $1 AND port = $2 AND username = $3",
         ip, port, username
@@ -39,7 +43,8 @@ void Manager::insert_into_Users(
     const std::string &ip,
     const std::string &port,
     const std::string &first_conn_time = "NOW()"
-) {
+)
+{
     pqxx::work w(C);
 
     const pqxx::result res = w.exec_params(
@@ -67,7 +72,8 @@ void Manager::insert_into_Files(
     const std::string &last_modified,
     const std::string &DecRep_path,
     const std::string &author_id
-) {
+)
+{
     pqxx::work w(C);
 
     w.exec_params(
@@ -82,7 +88,8 @@ void Manager::insert_into_FileOwners(
     const std::string &owner_id,
     const std::string &file_id,
     const std::string &local_path
-) {
+)
+{
     pqxx::work w(C);
 
     w.exec_params(
@@ -101,7 +108,8 @@ void Manager::add_file_template(
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     fs::path p(local_file_path);
 
     if (fs::is_regular_file(p)) {
@@ -112,8 +120,7 @@ void Manager::add_file_template(
         int author_id = get_user_id(w, ip, username, port);
 
         // Проверять ли ещё по имени файла?
-        const pqxx::result res =
-            w.exec_params("SELECT id FROM Files WHERE file_hash = $1", hash);
+        const pqxx::result res = w.exec_params("SELECT id FROM Files WHERE file_hash = $1", hash);
 
         if (res.empty()) {
             const pqxx::result file_added = w.exec_params(
@@ -145,7 +152,8 @@ void Manager::add_file(
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     pqxx::work w(C);
 
     add_file_template(
@@ -160,7 +168,8 @@ void Manager::add_folder(
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     const fs::path p(local_folder_path);
     if (!is_directory(p)) {
         std::cout << "That's not a folder\n";
@@ -186,7 +195,8 @@ std::string Manager::delete_local_file(
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     pqxx::work w(C);
     std::string delete_full_path = "";
 
@@ -237,7 +247,8 @@ std::string Manager::delete_local_file(
     return delete_full_path;
 }
 
-void Manager::untrack_file(const std::string &full_DecRep_path) {
+void Manager::untrack_file(const std::string &full_DecRep_path)
+{
     pqxx::work w(C);
 
     fs::path p(full_DecRep_path);
@@ -263,7 +274,8 @@ void Manager::untrack_file(const std::string &full_DecRep_path) {
     std::cout << "File deleted\n";
 }
 
-void Manager::untrack_folder(const std::string &DecRep_path) {
+void Manager::untrack_folder(const std::string &DecRep_path)
+{
     pqxx::work w(C);
 
     const pqxx::result res = w.exec_params(
@@ -286,12 +298,13 @@ void Manager::untrack_folder(const std::string &DecRep_path) {
 }
 
 void Manager::update_local_path(
-    const std::string &old_local_path,  // Может быть заменен
+    const std::string &old_local_path, // Может быть заменен
     const std::string &new_local_path,
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     pqxx::work w(C);
 
     int owner_id = get_user_id(w, ip, port, username);
@@ -314,7 +327,8 @@ void Manager::update_file(
     const std::string &port,
     std::string &new_hash,
     std::size_t &new_size
-) {
+)
+{
     pqxx::work w(C);
 
     int owner_id = get_user_id(w, ip, port, username);
@@ -345,7 +359,8 @@ std::vector<std::string> Manager::delete_user(
     const std::string &username,
     const std::string &ip,
     const std::string &port
-) {
+)
+{
     pqxx::work w(C);
     std::vector<std::string> deleted;
 
@@ -380,7 +395,8 @@ std::vector<std::string> Manager::delete_user(
     return deleted;
 }
 
-bool Manager::is_users_empty() {
+bool Manager::is_users_empty()
+{
     pqxx::work w(C);
 
     pqxx::result result = w.exec(
@@ -390,7 +406,8 @@ bool Manager::is_users_empty() {
     return result[0][0].as<bool>();
 }
 
-json::value Manager::fetch_table_data(const std::string &table_name) {
+json::value Manager::fetch_table_data(const std::string &table_name)
+{
     json::array table_json;
     pqxx::work w(C);
     pqxx::result result = w.exec("SELECT * FROM " + w.quote_name(table_name));
@@ -403,11 +420,12 @@ json::value Manager::fetch_table_data(const std::string &table_name) {
         table_json.push_back(row_json);
     }
     w.commit();
-    
+
     return table_json;
 }
 
-json::object Manager::get_all_data() {
+json::object Manager::get_all_data()
+{
     json::object response_json;
 
     response_json["users"] = fetch_table_data("users");
@@ -416,4 +434,4 @@ json::object Manager::get_all_data() {
 
     return response_json;
 }
-}  // namespace DBManager
+} // namespace DBManager

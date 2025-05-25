@@ -1,4 +1,4 @@
-BasedOnStyle: Chromium
+BasedOnStyle: WebKit
 IndentWidth: 4
 AccessModifierOffset: -4
 PointerAlignment: Right

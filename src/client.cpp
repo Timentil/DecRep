@@ -2,20 +2,22 @@
 
 namespace Client {
 
-HTTPClient::HTTPClient(Events::EventHandler &handler_) : handler(handler_){};
+HTTPClient::HTTPClient(Events::EventHandler &handler_)
+    : handler(handler_) {};
 
 net::awaitable<void> HTTPClient::do_session(
     const std::string &address,
     int port,
     const std::string &target,
     int version
-) {
+)
+{
     // Handle event
     std::string_view target_view(target);
 
     auto get_next_token = [&]() {
         size_t pos = target_view.find('/');
-        std::string token{};
+        std::string token {};
         if (pos != target_view.npos) {
             token = target_view.substr(0, pos);
             target_view.remove_prefix(pos + 1);
@@ -41,14 +43,14 @@ net::awaitable<void> HTTPClient::do_session(
     }
 
     auto executor = co_await net::this_coro::executor;
-    auto stream = beast::tcp_stream{executor};
+    auto stream = beast::tcp_stream { executor };
     net::ip::tcp::endpoint e(net::ip::make_address(address), port);
 
     stream.expires_after(std::chrono::seconds(30));
     co_await stream.async_connect(e);
 
     // Send request
-    http::request<http::string_body> req{http::verb::get, target, version};
+    http::request<http::string_body> req { http::verb::get, target, version };
     stream.expires_after(std::chrono::seconds(30));
     co_await http::async_write(stream, req);
 
@@ -66,7 +68,7 @@ net::awaitable<void> HTTPClient::do_session(
     if (event == "get_db_data") {
         handler.import_data(res.body());
     }
-    
+
     // Close connection
     beast::error_code ec;
     stream.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
@@ -78,4 +80,4 @@ net::awaitable<void> HTTPClient::do_session(
         throw boost::system::system_error(ec, "shutdown");
     }
 }
-}  // namespace Client
+} // namespace Client

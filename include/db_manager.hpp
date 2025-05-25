@@ -1,9 +1,9 @@
 #ifndef DB_MANAGER_HPP_
 #define DB_MANAGER_HPP_
 
+#include <boost/json.hpp>
 #include <filesystem>
 #include <iostream>
-#include <boost/json.hpp>
 #include <pqxx/pqxx>
 #include <string>
 
@@ -89,7 +89,7 @@ public:
     void untrack_folder(const std::string &DecRep_path);
 
     void update_local_path(
-        const std::string &old_local_path,  // Может быть заменен
+        const std::string &old_local_path, // Может быть заменен
         const std::string &new_local_path,
         const std::string &username,
         const std::string &ip,
@@ -101,8 +101,8 @@ public:
         const std::string &username,
         const std::string &ip,
         const std::string &port,
-        std::string &new_hash,  // ???
-        std::size_t &new_size   // ???
+        std::string &new_hash, // ???
+        std::size_t &new_size // ???
     );
 
     std::vector<std::string> delete_user(
@@ -117,6 +117,6 @@ public:
 
     json::object get_all_data();
 };
-}  // namespace DBManager
+} // namespace DBManager
 
-#endif  // DB_MANAGER_HPP_
+#endif // DB_MANAGER_HPP_

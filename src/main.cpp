@@ -1,10 +1,9 @@
-#include <format>
 #include "client.hpp"
 #include "dec_rep.hpp"
+#include <format>
 
-namespace net = boost::asio;
-
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     if (argc != 4) {
         std::cerr << "Usage: dec-rep <lisening_port> <db_name> <db_password>\n"
                   << "Example:\n"
@@ -20,14 +19,15 @@ int main(int argc, char *argv[]) {
 
     try {
         DecRep app("0.0.0.0", lisening_port, connection_str);
+        app.run();
 
         // First connection
         if (app.db_manager.is_users_empty()) {
-            std::string user_name{};
+            std::string user_name {};
             std::cout << "Hello, enter your user name: ";
             std::cin >> user_name;
 
-            std::string command{};
+            std::string command {};
             std::cout
                 << "You don't have a repository yet. Do you want to create "
                    "your own or connect to an existing one?\n"
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
                 return EXIT_FAILURE;
             }
             if (command == "connect") {
-                std::string ip{}, port{};
+                std::string ip {}, port {};
                 std::cout << "Enter host's ip address and port (Ex: 0.0.0.0 1234): ";
                 std::cin >> ip >> port;
                 net::co_spawn(

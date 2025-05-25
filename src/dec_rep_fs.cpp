@@ -7,25 +7,32 @@ static int TAB = 2;
 
 namespace DecRepFS {
 
-Node::Node(std::string s) : name(std::move(s)) {
+Node::Node(std::string s)
+    : name(std::move(s))
+{
 }
 
-void File::print(const int level) const {
+void File::print(const int level) const
+{
     std::cout << std::string(level, ' ') << name << '\n';
 }
 
-void Directory::print(const int level) const {
+void Directory::print(const int level) const
+{
     std::cout << std::string(level, ' ') << name << '\n';
     for (auto &child : children) {
         child.second->print(level + TAB);
     }
 }
 
-FS::FS() : root("DecRep") {
+FS::FS()
+    : root("DecRep")
+{
 }
 
 std::vector<std::string>
-FS::split_path(const std::string &path, const char delim) {
+FS::split_path(const std::string &path, const char delim)
+{
     std::vector<std::string> subdirs;
     std::stringstream ss(path);
     std::string subdir;
@@ -41,7 +48,8 @@ FS::split_path(const std::string &path, const char delim) {
     return subdirs;
 }
 
-void FS::add_file(const std::string &path, const std::string &file_name) {
+void FS::add_file(const std::string &path, const std::string &file_name)
+{
     std::vector<std::string> subdirs = split_path(path, '/');
 
     Directory *current = &root;
@@ -67,7 +75,8 @@ void FS::add_file(const std::string &path, const std::string &file_name) {
 void FS::add_folder(
     const std::string &DecRep_path,
     const std::string &local_path
-) {
+)
+{
     const fs::path folder_path(DecRep_path);
     std::string folder_name = folder_path.filename().string();
     const std::string parent_path = folder_path.parent_path().string();
@@ -86,12 +95,10 @@ void FS::add_folder(
     }
 
     if (!current->children.contains(folder_name)) {
-        current->children[folder_name] =
-            std::make_unique<Directory>(folder_name);
+        current->children[folder_name] = std::make_unique<Directory>(folder_name);
     }
 
-    const auto *newDir =
-        dynamic_cast<Directory *>(current->children[folder_name].get());
+    const auto *newDir = dynamic_cast<Directory *>(current->children[folder_name].get());
     if (!newDir) {
         throw std::runtime_error("Failed to create directory");
     }
@@ -110,7 +117,8 @@ void FS::add_folder(
     }
 }
 
-void FS::delete_file(const std::string &path) {
+void FS::delete_file(const std::string &path)
+{
     const std::vector<std::string> subdirs = split_path(path, '/');
 
     // Только если пустая строка, надо перенести отсюда
@@ -142,13 +150,14 @@ void FS::delete_file(const std::string &path) {
 
     if (dynamic_cast<File *>(it->second.get()) == nullptr) {
         throw std::runtime_error("Not a file"
-        );  // Проверка, что получили файл, а не папку
+        ); // Проверка, что получили файл, а не папку
     }
 
     current->children.erase(it);
 }
 
-void FS::delete_folder(const std::string &path) {
+void FS::delete_folder(const std::string &path)
+{
     const std::vector<std::string> subdirs = split_path(path, '/');
 
     Directory *current = &root;
@@ -170,19 +179,21 @@ void FS::delete_folder(const std::string &path) {
 
     if (dynamic_cast<Directory *>(it->second.get()) == nullptr) {
         throw std::runtime_error("Not a directory"
-        );  // Проверка, что получили папку, а не файл
+        ); // Проверка, что получили папку, а не файл
     }
 
     current->children.erase(it);
 }
 
-void FS::delete_user_files(const std::vector<std::string> &file_paths) {
+void FS::delete_user_files(const std::vector<std::string> &file_paths)
+{
     for (const auto &file_path : file_paths) {
         delete_file(file_path);
     }
 }
 
-void FS::print_DecRepFS() const {
+void FS::print_DecRepFS() const
+{
     root.print(INITIAL_INDENT);
 }
 
@@ -190,7 +201,8 @@ std::vector<std::string> FS::find(
     const std::string &name,
     const Node *node,
     const std::string &curr_path
-) const {
+) const
+{
     if (node == nullptr) {
         node = &root;
     }
@@ -210,11 +222,10 @@ std::vector<std::string> FS::find(
 
     if (const auto *dir = dynamic_cast<const Directory *>(node)) {
         for (const auto &child : dir->children) {
-            std::vector<std::string> child_res =
-                find(name, child.second.get(), new_path);
+            std::vector<std::string> child_res = find(name, child.second.get(), new_path);
             res.insert(res.end(), child_res.begin(), child_res.end());
         }
     }
     return res;
 }
-}  // namespace DecRepFS
+} // namespace DecRepFS
