@@ -11,6 +11,7 @@ using namespace boost::asio::ip;
 
 namespace search_service {
 struct search_service {
+private:
     enum run_state { RUN = 0, STOP = 1 };
 
     run_state state = RUN;
@@ -35,6 +36,8 @@ struct search_service {
         : search_service(io_context, LISTENER_PORT){};
     void run_listener();
     void run_speaker();
+
+public:
     void run_service();
     void stop_service();
 
