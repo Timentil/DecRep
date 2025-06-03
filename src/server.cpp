@@ -11,16 +11,15 @@ http::message_generator HTTPServer::handle_request(
 )
 {
     // Returns a simple response
-    const auto response =
-        [&req](http::status status, std::string_view msg = "") {
-            http::response<http::string_body> res { status, req.version() };
-            res.keep_alive(req.keep_alive());
-            if (msg != "") {
-                res.body() = std::string(msg);
-            }
-            res.prepare_payload();
-            return res;
-        };
+    const auto response = [&req](http::status status, std::string_view msg = "") {
+        http::response<http::string_body> res { status, req.version() };
+        res.keep_alive(req.keep_alive());
+        if (msg != "") {
+            res.body() = std::string(msg);
+        }
+        res.prepare_payload();
+        return res;
+    };
 
     // Make sure we can handle the method
     if (req.method() != http::verb::get) {

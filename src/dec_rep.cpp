@@ -25,9 +25,8 @@ DecRep::DecRep(const std::string &address, int port, const std::string &connecti
     : m_ioc()
     , m_work_guard(net::make_work_guard(m_ioc))
     , m_db_manager(connection_data)
-    ,
     // TODO defailt init dec_rep_fs
-    m_event_handler(m_db_manager, m_dec_rep_fs)
+    , m_event_handler(m_db_manager, m_dec_rep_fs)
     , m_server(m_event_handler)
     , m_client(m_event_handler)
 {
