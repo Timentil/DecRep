@@ -6,11 +6,13 @@
 #include "dec_rep_fs.hpp"
 #include "process_events.hpp"
 #include "server.hpp"
+#include "search_service.hpp"
 
 // - connect to database
 // - run server
 // - construct DecRepFS from database
 // - run file_watcher
+// - run search_service
 class DecRep {
 public:
     net::io_context m_ioc;
@@ -22,6 +24,7 @@ public:
     Events::EventHandler m_event_handler;
     Server::HTTPServer m_server;
     Client::HTTPClient m_client;
+    search_service::search_service m_search_service;
 
     DecRep(const std::string &address, int port, const std::string &connection_data);
 

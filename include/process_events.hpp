@@ -13,7 +13,7 @@
 namespace beast = boost::beast;
 namespace json = boost::json;
 namespace http = beast::http;
-using CommandHandler = std::function<void(const std::vector<std::string_view> &)>;
+using CommandHandler = std::function<bool(const std::vector<std::string_view> &)>;
 
 namespace Events {
 
@@ -33,20 +33,19 @@ public:
     std::string get_db_data();
     void import_data(const std::string &json_str);
 
-    void help([[maybe_unused]] const std::vector<std::string_view> &);
-    void add_file(const std::vector<std::string_view> &);
-    void add_folder(const std::vector<std::string_view> &);
-    void add_user(const std::vector<std::string_view> &);
-    void update_file(const std::vector<std::string_view> &);
-    void update_local_path(const std::vector<std::string_view> &);
-    void untrack_file(const std::vector<std::string_view> &);
-    void untrack_folder(const std::vector<std::string_view> &);
-    void delete_local_file(const std::vector<std::string_view> &);
-    void delete_user(const std::vector<std::string_view> &);
+    bool add_file(const std::vector<std::string_view> &);
+    bool add_folder(const std::vector<std::string_view> &);
+    bool add_user(const std::vector<std::string_view> &);
+    bool update_file(const std::vector<std::string_view> &);
+    bool update_local_path(const std::vector<std::string_view> &);
+    bool untrack_file(const std::vector<std::string_view> &);
+    bool untrack_folder(const std::vector<std::string_view> &);
+    bool delete_local_file(const std::vector<std::string_view> &);
+    bool delete_user(const std::vector<std::string_view> &);
 
     http::message_generator handle_request(http::request<http::string_body> &&req);
     void handle_response(http::response<http::string_body> &&res);
 };
-}; // namespace Events
+} // namespace Events
 
 #endif // PROCESS_EVENTS_HPP_

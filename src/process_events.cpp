@@ -46,13 +46,12 @@ EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs)
     , decRepFS(fs)
 {
     func_map = {
-        { "help", [this](const auto &params) { this->help(params); } },
-        { "add_file", [this](const auto &params) { this->add_file(params); } },
-        { "add_folder", [this](const auto &params) { this->add_folder(params); } },
-        { "change_file", [this](const auto &params) { this->update_file(params); } },
-        { "untrack_file", [this](const auto &params) { this->untrack_file(params); } },
-        { "untrack_folder", [this](const auto &params) { this->untrack_folder(params); } },
-        { "delete_local_file", [this](const auto &params) { this->delete_local_file(params); } }
+        { "add_file", [this](const auto &params) { return this->add_file(params); } },
+        { "add_folder", [this](const auto &params) { return this->add_folder(params); } },
+        { "change_file", [this](const auto &params) { return this->update_file(params); } },
+        { "untrack_file", [this](const auto &params) { return this->untrack_file(params); } },
+        { "untrack_folder", [this](const auto &params) { return this->untrack_folder(params); } },
+        { "delete_local_file", [this](const auto &params) { return this->delete_local_file(params); } }
     };
 };
 
@@ -102,29 +101,11 @@ void EventHandler::import_data(const std::string &json_str)
     }
 }
 
-void help([[maybe_unused]] const std::vector<std::string_view> &params)
-{
-    std::string help_message = R"(
-    Справка по командам:
-    add_file [локальный_путь_к_файлу] [путь_в_DecRep] [имя_пользователя] [IP_адрес] [порт] - Добавляет файл под отслеживание.
-    add_folder [локальный_путь_к_папке] [путь_в_DecRep] [имя_пользователя] [IP_адрес] [порт] - Добавляет папку под отслеживание.
-    add_user [имя_пользователя] [IP_адрес] [порт] - Регистрирует нового пользователя.
-    update_file [локальный_путь_к_файлу] [имя_пользователя] [новый_хэш] [новый_размер] [IP_адрес] [порт] - Обновляет информацию об отслеживаемом файле.
-    update_local_path [старый_локальный_путь] [новый_локальный_путь] [имя_пользователя] [IP_адрес] [порт] - Обновляет локальный путь.
-    untrack_file [полный_путь_в_DecRep] - Прекращает отслеживание файла.
-    untrack_folder [путь_в_DecRep] - Прекращает отслеживание папки.
-    delete_local_file [локальный_путь_к_файлу] [имя_пользователя] [IP_адрес] [порт] - Удаляет локальный файл.
-    delete_user [имя_пользователя] [IP_адрес] [порт] - Удаляет пользователя.
-    )";
-
-    std::cout << help_message << '\n';
-}
-
-void EventHandler::add_file(const std::vector<std::string_view> &params)
+bool EventHandler::add_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 5) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string local_file_path(params[0]);
@@ -138,13 +119,15 @@ void EventHandler::add_file(const std::vector<std::string_view> &params)
         local_file_path, file_name, DecRep_path, username, ip, port
     );
     decRepFS.add_file(DecRep_path, file_name);
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::add_folder(const std::vector<std::string_view> &params)
+bool EventHandler::add_folder(const std::vector<std::string_view> &params)
 {
     if (params.size() != 5) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string local_folder_path(params[0]);
@@ -156,13 +139,15 @@ void EventHandler::add_folder(const std::vector<std::string_view> &params)
 
     dbManager.add_folder(local_folder_path, DecRep_path, username, ip, port);
     decRepFS.add_folder(DecRep_path, local_folder_path);
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::add_user(const std::vector<std::string_view> &params)
+bool EventHandler::add_user(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string username(params[0]);
@@ -170,13 +155,15 @@ void EventHandler::add_user(const std::vector<std::string_view> &params)
     const std::string port(params[2]);
 
     dbManager.insert_into_Users(username, ip, port);
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::update_file(const std::vector<std::string_view> &params)
+bool EventHandler::update_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 6) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string local_path(params[0]);
@@ -187,14 +174,16 @@ void EventHandler::update_file(const std::vector<std::string_view> &params)
     const std::string port(params[5]);
 
     dbManager.update_file(local_path, username, ip, port, new_hash, new_size);
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::update_local_path(const std::vector<std::string_view> &params
+bool EventHandler::update_local_path(const std::vector<std::string_view> &params
 )
 {
     if (params.size() != 5) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string old_local_path(params[0]);
@@ -206,40 +195,46 @@ void EventHandler::update_local_path(const std::vector<std::string_view> &params
     dbManager.update_local_path(
         old_local_path, new_local_path, username, ip, port
     );
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::untrack_file(const std::vector<std::string_view> &params)
+bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string full_DecRep_path(params[0]);
 
     dbManager.untrack_file(full_DecRep_path);
     decRepFS.delete_file(full_DecRep_path);
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::untrack_folder(const std::vector<std::string_view> &params)
+bool EventHandler::untrack_folder(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string DecRep_path(params[0]);
 
     dbManager.untrack_folder(DecRep_path);
     decRepFS.delete_folder(DecRep_path);
+    
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::delete_local_file(const std::vector<std::string_view> &params
+bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
 )
 {
     if (params.size() != 4) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string local_path(params[0]);
@@ -251,13 +246,15 @@ void EventHandler::delete_local_file(const std::vector<std::string_view> &params
     if (!delete_res.empty()) {
         decRepFS.delete_file(delete_res);
     }
+
+    return EXIT_SUCCESS;
 }
 
-void EventHandler::delete_user(const std::vector<std::string_view> &params)
+bool EventHandler::delete_user(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
         std::cout << "Invalid args count:" << params.size() << '\n';
-        return;
+        return EXIT_FAILURE;
     }
 
     const std::string username(params[0]);
@@ -266,6 +263,8 @@ void EventHandler::delete_user(const std::vector<std::string_view> &params)
 
     const std::vector<std::string> deleted_files = dbManager.delete_user(username, ip, port);
     decRepFS.delete_user_files(deleted_files);
+
+    return EXIT_SUCCESS;
 }
 
 http::message_generator EventHandler::handle_request(http::request<http::string_body> &&req)
@@ -307,7 +306,8 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
     return response(http::status::accepted);
 }
 
-void handle_response(http::response<http::string_body> &&res) {
+void handle_response(http::response<http::string_body> &&res)
+{
     if (res.result() != http::status::accepted) {
         std::cout << res.body() << '\n';
     }

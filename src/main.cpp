@@ -5,6 +5,18 @@
 
 #define SERVER_LISTENER_PORT 1498
 
+const std::string HELP_MESSAGE = R"(
+    Справка по командам:
+    add_file [локальный_путь_к_файлу] [путь_в_DecRep] [имя_пользователя] [IP_адрес] [порт] - Добавляет файл под отслеживание.
+    add_folder [локальный_путь_к_папке] [путь_в_DecRep] [имя_пользователя] [IP_адрес] [порт] - Добавляет папку под отслеживание.
+    add_user [имя_пользователя] [IP_адрес] [порт] - Регистрирует нового пользователя.
+    update_file [локальный_путь_к_файлу] [имя_пользователя] [новый_хэш] [новый_размер] [IP_адрес] [порт] - Обновляет информацию об отслеживаемом файле.
+    update_local_path [старый_локальный_путь] [новый_локальный_путь] [имя_пользователя] [IP_адрес] [порт] - Обновляет локальный путь.
+    untrack_file [полный_путь_в_DecRep] - Прекращает отслеживание файла.
+    untrack_folder [путь_в_DecRep] - Прекращает отслеживание папки.
+    delete_local_file [локальный_путь_к_файлу] [имя_пользователя] [IP_адрес] [порт] - Удаляет локальный файл.
+    delete_user [имя_пользователя] [IP_адрес] [порт] - Удаляет пользователя.
+    )";
 
 int main(int argc, char *argv[])
 {
@@ -61,7 +73,7 @@ int main(int argc, char *argv[])
         }
 
         std::cout << "App is running...\n";
-        std::string line{};
+        std::string line {};
         for (;;) {
             std::cout << "Enter your comands (or type 'help')\n";
             std::getline(std::cin, line);
@@ -72,13 +84,19 @@ int main(int argc, char *argv[])
 
             std::string command_name(parts[0]);
             std::vector<std::string_view> command_args;
+            if (command_name == "help") {
+                std::cout << HELP_MESSAGE << '\n';
+                continue;
+            }
+
             if (parts.size() > 1) {
                 command_args.assign(parts.begin() + 1, parts.end());
             }
+            
 
             auto it = app.m_event_handler.func_map.find(command_name);
             if (it != app.m_event_handler.func_map.end()) {
-                it->second(command_args);
+                it->second(command_args); // TODO
             } else {
                 std::cout << "Unknown command:" << command_name << '\n';
             }
