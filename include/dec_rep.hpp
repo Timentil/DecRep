@@ -32,6 +32,8 @@ public:
 
     void start_server(const std::string &address, const int port);
 
+    void construct_dec_rep_fs();
+
     void run();
 
     void stop();

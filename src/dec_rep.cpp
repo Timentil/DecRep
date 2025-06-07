@@ -21,11 +21,18 @@ void DecRep::start_server(const std::string &address, const int port)
     );
 }
 
+void DecRep::construct_dec_rep_fs() {
+    auto files = m_db_manager.get_files_info();
+    for (auto file : files) {
+        m_dec_rep_fs.add_file(file.dec_rep_path, file.file_name);
+    }
+}
+
 DecRep::DecRep(const std::string &address, int port, const std::string &connection_data)
     : m_ioc()
     , m_work_guard(net::make_work_guard(m_ioc))
     , m_db_manager(connection_data)
-    // TODO defailt init dec_rep_fs
+    , m_dec_rep_fs()
     , m_event_handler(m_db_manager, m_dec_rep_fs)
     , m_server(m_event_handler)
     , m_client(m_event_handler)
@@ -34,7 +41,7 @@ DecRep::DecRep(const std::string &address, int port, const std::string &connecti
 {
     start_server(address, port);
     m_search_service.run_service();
-    // construct_dec_rep_fs();
+    construct_dec_rep_fs();
     // start_file_watcher();
     // soon...
 }

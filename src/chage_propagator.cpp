@@ -61,7 +61,7 @@ net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::st
     std::set<address> users = m_search_service.get_app_endpoints();
 
     std::string target = join(parts, '/');
-    auto executor = co_await net::this_coro::executor;
+    auto executor = co_await net::this_coro::executor; // TODO возможно не найдётся
 
     // Пробрасываем всем request
     for (auto ip : users) {

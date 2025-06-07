@@ -395,6 +395,27 @@ std::vector<std::string> Manager::delete_user(
     return deleted;
 }
 
+std::vector<DbFileInfo> Manager::get_files_info()
+{
+    pqxx::work w(C);
+
+    std::vector<DbFileInfo> files;
+
+    pqxx::result R = w.exec(
+        "SELECT DecRep_path, file_name FROM Files"
+    );
+
+    for (const pqxx::row &row : R) {
+        DbFileInfo info;
+        info.dec_rep_path = row["DecRep_path"].as<std::string>();
+        info.file_name = row["file_name"].as<std::string>();
+
+        files.push_back(info);
+    }
+
+    return files;
+}
+
 bool Manager::is_users_empty()
 {
     pqxx::work w(C);

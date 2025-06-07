@@ -11,6 +11,12 @@ namespace fs = std::filesystem;
 namespace json = boost::json;
 
 namespace DBManager {
+
+struct DbFileInfo {
+    std::string dec_rep_path;
+    std::string file_name; 
+};
+
 class Manager {
 private:
     pqxx::connection C;
@@ -110,6 +116,8 @@ public:
         const std::string &ip,
         const std::string &port
     );
+
+    std::vector<DbFileInfo> get_files_info();
 
     bool is_users_empty();
 
