@@ -6,21 +6,20 @@ HTTPClient::HTTPClient(Events::EventHandler &handler_)
     : handler(handler_) {};
 
 net::awaitable<void> HTTPClient::do_session(
-    const std::string &address,
+    const net::ip::address &address,
     int port,
-    const std::string &target,
-    int version
+    const std::string &target
 )
 {
     auto executor = co_await net::this_coro::executor;
     auto stream = beast::tcp_stream { executor };
-    net::ip::tcp::endpoint e(net::ip::make_address(address), port);
+    net::ip::tcp::endpoint e(address, port);
 
     stream.expires_after(std::chrono::seconds(30));
     co_await stream.async_connect(e);
 
     // Send request
-    http::request<http::string_body> req { http::verb::get, target, version };
+    http::request<http::string_body> req { http::verb::get, target, 11 };
     stream.expires_after(std::chrono::seconds(30));
     co_await http::async_write(stream, req);
 

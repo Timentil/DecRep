@@ -104,7 +104,6 @@ void EventHandler::import_data(const std::string &json_str)
 bool EventHandler::add_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 5) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -126,7 +125,6 @@ bool EventHandler::add_file(const std::vector<std::string_view> &params)
 bool EventHandler::add_folder(const std::vector<std::string_view> &params)
 {
     if (params.size() != 5) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -146,7 +144,6 @@ bool EventHandler::add_folder(const std::vector<std::string_view> &params)
 bool EventHandler::add_user(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -162,7 +159,6 @@ bool EventHandler::add_user(const std::vector<std::string_view> &params)
 bool EventHandler::update_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 6) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -182,7 +178,6 @@ bool EventHandler::update_local_path(const std::vector<std::string_view> &params
 )
 {
     if (params.size() != 5) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -202,7 +197,6 @@ bool EventHandler::update_local_path(const std::vector<std::string_view> &params
 bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -217,7 +211,6 @@ bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
 bool EventHandler::untrack_folder(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -233,7 +226,6 @@ bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
 )
 {
     if (params.size() != 4) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -253,7 +245,6 @@ bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
 bool EventHandler::delete_user(const std::vector<std::string_view> &params)
 {
     if (params.size() != 3) {
-        std::cout << "Invalid args count:" << params.size() << '\n';
         return EXIT_FAILURE;
     }
 

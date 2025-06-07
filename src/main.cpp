@@ -38,39 +38,39 @@ int main(int argc, char *argv[])
 
         // TODO
         // First connection
-        if (app.m_db_manager.is_users_empty()) {
-            std::string user_name {};
-            std::cout << "Hello, enter your user name: ";
-            std::cin >> user_name;
+        // if (app.m_db_manager.is_users_empty()) {
+        //     std::string user_name {};
+        //     std::cout << "Hello, enter your user name: ";
+        //     std::cin >> user_name;
 
-            std::string command {};
-            std::cout
-                << "You don't have a repository yet. Do you want to create "
-                   "your own or connect to an existing one?\n"
-                << "Type (create) or (connect): ";
-            std::cin >> command;
+        //     std::string command {};
+        //     std::cout
+        //         << "You don't have a repository yet. Do you want to create "
+        //            "your own or connect to an existing one?\n"
+        //         << "Type (create) or (connect): ";
+        //     std::cin >> command;
 
-            if (command != "connect" || command != "create") {
-                std::cerr << "Incorrect command\n";
-                return EXIT_FAILURE;
-            }
-            if (command == "connect") {
-                std::string ip {}, port {};
-                std::cout << "Enter host's ip address and port (Ex: 0.0.0.0 1234): ";
-                std::cin >> ip >> port;
-                net::co_spawn(
-                    app.m_ioc,
-                    app.m_client.do_session(ip, std::stoi(port), "events/get_db_data/" + user_name, 11),
-                    [](std::exception_ptr e) {
-                        if (e) {
-                            std::rethrow_exception(e);
-                        }
-                    }
-                );
-            } else {
-                app.m_db_manager.insert_into_Users(user_name, "0.0.0.0", "1234"); // TODO
-            }
-        }
+        //     if (command != "connect" || command != "create") {
+        //         std::cerr << "Incorrect command\n";
+        //         return EXIT_FAILURE;
+        //     }
+        //     if (command == "connect") {
+        //         std::string ip {}, port {};
+        //         std::cout << "Enter host's ip address and port (Ex: 0.0.0.0 1234): ";
+        //         std::cin >> ip >> port;
+        //         net::co_spawn(
+        //             app.m_ioc,
+        //             app.m_client.do_session(ip, std::stoi(port), "events/get_db_data/" + user_name),
+        //             [](std::exception_ptr e) {
+        //                 if (e) {
+        //                     std::rethrow_exception(e);
+        //                 }
+        //             }
+        //         );
+        //     } else {
+        //         app.m_db_manager.insert_into_Users(user_name, "0.0.0.0", "1234"); // TODO
+        //     }
+        // }
 
         std::cout << "App is running...\n";
         std::string line {};
@@ -83,23 +83,12 @@ int main(int argc, char *argv[])
             }
 
             std::string command_name(parts[0]);
-            std::vector<std::string_view> command_args;
             if (command_name == "help") {
                 std::cout << HELP_MESSAGE << '\n';
                 continue;
             }
-
-            if (parts.size() > 1) {
-                command_args.assign(parts.begin() + 1, parts.end());
-            }
             
-
-            auto it = app.m_event_handler.func_map.find(command_name);
-            if (it != app.m_event_handler.func_map.end()) {
-                it->second(command_args); // TODO
-            } else {
-                std::cout << "Unknown command:" << command_name << '\n';
-            }
+            app.m_propagator.on_local_change(parts);
         }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;

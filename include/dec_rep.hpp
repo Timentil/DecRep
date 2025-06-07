@@ -7,6 +7,7 @@
 #include "process_events.hpp"
 #include "server.hpp"
 #include "search_service.hpp"
+#include "change_propagator.hpp"
 
 // - connect to database
 // - run server
@@ -25,6 +26,7 @@ public:
     Server::HTTPServer m_server;
     Client::HTTPClient m_client;
     search_service::search_service m_search_service;
+    ChangePropagator::ChangePropagator m_propagator;
 
     DecRep(const std::string &address, int port, const std::string &connection_data);
 

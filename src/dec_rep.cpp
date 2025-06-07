@@ -30,6 +30,7 @@ DecRep::DecRep(const std::string &address, int port, const std::string &connecti
     , m_server(m_event_handler)
     , m_client(m_event_handler)
     , m_search_service(m_ioc)
+    , m_propagator(m_event_handler, m_client, m_search_service)
 {
     start_server(address, port);
     m_search_service.run_service();

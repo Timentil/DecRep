@@ -27,10 +27,9 @@ public:
     HTTPClient(Events::EventHandler &handler_);
 
     net::awaitable<void> do_session(
-        const std::string &address,
+        const net::ip::address &address,
         int port,
-        const std::string &target,
-        int version
+        const std::string &target
     );
 };
 } // namespace Client
