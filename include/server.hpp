@@ -34,12 +34,6 @@ private:
 public:
     HTTPServer(Events::EventHandler &handler_);
 
-    // Return a response for the given request.
-    http::message_generator handle_request(
-        http::request<http::string_body> &&req,
-        const net::ip::tcp::endpoint &remote_ep
-    );
-
     // Handles an HTTP server connection
     net::awaitable<void> do_session(beast::tcp_stream stream);
 

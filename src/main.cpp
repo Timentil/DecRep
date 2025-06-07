@@ -1,8 +1,10 @@
 #include "client.hpp"
 #include "dec_rep.hpp"
+#include "process_events.hpp"
 #include <format>
 
 #define SERVER_LISTENER_PORT 1498
+
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +24,7 @@ int main(int argc, char *argv[])
         DecRep app("0.0.0.0", SERVER_LISTENER_PORT, connection_str);
         app.run();
 
+        // TODO
         // First connection
         if (app.m_db_manager.is_users_empty()) {
             std::string user_name {};
@@ -57,9 +60,29 @@ int main(int argc, char *argv[])
             }
         }
 
-        std::cout << "App is running...\n"
-                  << "Enter your comands here\n";
-        // TODO
+        std::cout << "App is running...\n";
+        std::string line{};
+        for (;;) {
+            std::cout << "Enter your comands (or type 'help')\n";
+            std::getline(std::cin, line);
+            std::vector<std::string_view> parts = Events::split_str(line, ' ');
+            if (parts.empty()) {
+                continue;
+            }
+
+            std::string command_name(parts[0]);
+            std::vector<std::string_view> command_args;
+            if (parts.size() > 1) {
+                command_args.assign(parts.begin() + 1, parts.end());
+            }
+
+            auto it = app.m_event_handler.func_map.find(command_name);
+            if (it != app.m_event_handler.func_map.end()) {
+                it->second(command_args);
+            } else {
+                std::cout << "Unknown command:" << command_name << '\n';
+            }
+        }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
