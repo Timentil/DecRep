@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS Users(
     id SERIAL PRIMARY KEY,
     /*ip INET NOT NULL,*/
     /*port INTEGER NOT NULL,*/
-    username VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
     first_connection_time TIMESTAMP NOT NULL
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS FileOwners(
     PRIMARY KEY(owner_id, file_id)
 );
 
-CREATE TABLE IF NOT EXISTS MyUsername(
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS MyUsername (
+    username VARCHAR(255) PRIMARY KEY
 );
+

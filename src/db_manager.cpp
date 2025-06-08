@@ -1,5 +1,4 @@
-#include "db_manager.hpp"
-#include "sha256_stub.hpp"
+#include "../include/db_manager.hpp"
 
 namespace fs = std::filesystem;
 
@@ -22,14 +21,12 @@ Manager::~Manager()
 
 int Manager::get_user_id(
     pqxx::work &w,
-    const std::string &ip,
-    const std::string &port,
     const std::string &username
 )
 {
     const pqxx::result user_id = w.exec_params(
-        "SELECT id FROM Users WHERE ip = $1 AND port = $2 AND username = $3",
-        ip, port, username
+        "SELECT id FROM Users WHERE username = $1",
+        username
     );
     if (!user_id.empty()) {
         return user_id[0]["id"].as<int>();
@@ -38,24 +35,63 @@ int Manager::get_user_id(
     }
 }
 
-void Manager::insert_into_Users(
+void Manager::add_user(
     const std::string &username,
-    const std::string &ip,
-    const std::string &port,
-    const std::string &first_conn_time = "NOW()"
+    bool isLocal
 )
 {
     pqxx::work w(C);
 
     const pqxx::result res = w.exec_params(
-        "SELECT id FROM Users WHERE ip = $1 AND port = $2 AND username = $3",
-        ip, port, username
+        "SELECT 1 FROM Users WHERE username = $1",
+        username
+    );
+
+    if (!res.empty()) {
+        std::cout << "Username already exists, please choose another\n";
+        return;
+    }
+
+    w.exec_params(
+        "INSERT INTO Users(username, first_connection_time) "
+        "VALUES($1, NOW()) ",
+        username
+    );
+
+    if (isLocal) {
+        w.exec_params(
+            "INSERT INTO MyUsername(username) VALUES($1) "
+            "ON CONFLICT(username) DO UPDATE "
+            "  SET username = EXCLUDED.username",
+            username
+        );
+        std::cout << "Your username is " << username << "\n";
+    }
+
+    w.commit();
+    std::cout << "User added\n";
+}
+
+
+void Manager::insert_into_Users(
+    const std::string &username
+)
+{
+    pqxx::work w(C);
+
+    const pqxx::result res = w.exec_params(
+        "SELECT id FROM Users WHERE username = $1",
+        username
     );
     if (res.empty()) {
         w.exec_params(
-            "INSERT INTO Users (ip, port, username, first_connection_time) "
-            "VALUES ($1, $2, $3, $4)",
-            ip, port, username, first_conn_time
+            "INSERT INTO Users (username, first_connection_time) "
+            "VALUES ($1, NOW())",
+            username
+        );
+        w.exec_params(
+            "INSERT INTO MyUsername (username) VALUES ($1)",
+            username
         );
         w.commit();
         std::cout << "User added successfully\n";
@@ -64,70 +100,32 @@ void Manager::insert_into_Users(
     }
 }
 
-void Manager::insert_into_Files(
-    const std::string &file_name,
-    const std::string &file_size,
-    const std::string &file_hash,
-    const std::string &addition_time,
-    const std::string &last_modified,
-    const std::string &DecRep_path,
-    const std::string &author_id
-)
-{
-    pqxx::work w(C);
-
-    w.exec_params(
-        "INSERT INTO Files (file_name, file_size, file_hash, addition_time, last_modified, DecRep_path, author_id) "
-        "VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        file_name, file_size, file_hash, addition_time, last_modified, DecRep_path, author_id
-    );
-    w.commit();
-}
-
-void Manager::insert_into_FileOwners(
-    const std::string &owner_id,
-    const std::string &file_id,
-    const std::string &local_path
-)
-{
-    pqxx::work w(C);
-
-    w.exec_params(
-        "INSERT INTO FileOwners (owner_id, file_id, local_path) "
-        "VALUES ($1, $2, $3)",
-        owner_id, file_id, local_path
-    );
-    w.commit();
-}
-
 void Manager::add_file_template(
     pqxx::work &w,
     const std::string &local_file_path,
     const std::string &file_name,
     const std::string &DecRep_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+    const std::string &username
 )
 {
     fs::path p(local_file_path);
 
     if (fs::is_regular_file(p)) {
-        std::size_t file_size = fs::file_size(p);
-        // Вероятно, должно передаваться в параметры
-        std::string hash = sha256(p.string());
+        auto file_size = fs::file_size(p);
 
-        int author_id = get_user_id(w, ip, username, port);
+        int author_id = get_user_id(w, username);
 
-        // Проверять ли ещё по имени файла?
-        const pqxx::result res = w.exec_params("SELECT id FROM Files WHERE file_hash = $1", hash);
+        const pqxx::result res = w.exec_params(
+            "SELECT id FROM Files WHERE file_name = $1 AND DecRep_path = $2",
+            file_name, DecRep_path
+        );
 
         if (res.empty()) {
             const pqxx::result file_added = w.exec_params(
-                "INSERT INTO Files (file_name, file_size, file_hash, "
+                "INSERT INTO Files (file_name, file_size, "
                 "addition_time, last_modified, DecRep_path, author_id) "
-                "VALUES ($1, $2, $3, NOW(), NOW(), $4, $5) RETURNING id",
-                file_name, file_size, hash, DecRep_path, author_id
+                "VALUES ($1, $2, NOW(), NOW(), $3, $4) RETURNING id",
+                file_name, file_size, DecRep_path, author_id
             );
 
             int file_id = file_added[0]["id"].as<int>();
@@ -149,15 +147,13 @@ void Manager::add_file(
     const std::string &local_file_path,
     const std::string &file_name,
     const std::string &DecRep_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+    const std::string &username
 )
 {
     pqxx::work w(C);
 
     add_file_template(
-        w, local_file_path, file_name, DecRep_path, username, ip, port
+        w, local_file_path, file_name, DecRep_path, username
     );
     w.commit();
 }
@@ -165,9 +161,7 @@ void Manager::add_file(
 void Manager::add_folder(
     const std::string &local_folder_path,
     const std::string &DecRep_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+    const std::string &username
 )
 {
     const fs::path p(local_folder_path);
@@ -182,45 +176,88 @@ void Manager::add_folder(
         if (entry.is_regular_file()) {
             std::string file_name = entry.path().filename().string();
             add_file_template(
-                w, entry.path().string(), file_name, DecRep_path, username,
-                ip, port
+                w, entry.path().string(), file_name, DecRep_path, username
             );
         }
     }
     w.commit();
+    std::cout << "Folder added\n";
 }
 
-std::string Manager::delete_local_file(
+void Manager::rename_file(
+    const std::string &DecRep_path,
+    const std::string &old_file_name,
+    const std::string &new_file_name
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "UPDATE Files SET file_name = $1 "
+        "WHERE DecRep_path = $2 AND file_name = $3",
+        new_file_name, DecRep_path, old_file_name
+    );
+    w.commit();
+    std::cout << "File renamed successfully \n";
+}
+
+void Manager::change_DecRep_path(
+    const std::string &file_name,
+    const std::string &old_DecRep_path,
+    const std::string &new_DecRep_path
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "UPDATE Files SET DecRep_path = $1 "
+        "WHERE file_name = $2 AND DecRep_path = $3",
+        new_DecRep_path, file_name, old_DecRep_path
+    );
+    w.commit();
+    std::cout << "Path changed for file '" << file_name << "'\n";
+}
+
+void Manager::rename_DecRep_path(
+    const std::string &old_DecRep_path_name,
+    const std::string &new_DecRep_path_name
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "UPDATE Files SET DecRep_path = $1 "
+        "WHERE DecRep_path = $2",
+        new_DecRep_path_name, old_DecRep_path_name
+    );
+    w.commit();
+    std::cout << "DecRep_path renamed from '" << old_DecRep_path_name
+              << "' to '" << new_DecRep_path_name << "\n";
+}
+
+void Manager::delete_local_file(
     const std::string &local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+    const std::string &username
 )
 {
     pqxx::work w(C);
     std::string delete_full_path = "";
 
-    int owner_id = get_user_id(w, ip, port, username);
+    int owner_id = get_user_id(w, username);
 
     const pqxx::result res = w.exec_params(
         "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
-        "owner_id "
-        "= $2",
+        "owner_id = $2",
         local_path, owner_id
     );
 
     if (res.empty()) {
         std::cout << "File doesn't exist\n";
-        return local_path;
+        return;
     }
 
     int file_id = res[0]["file_id"].as<int>();
 
     w.exec_params(
-        "DELETE FROM FileOwners WHERE local_path = $1 AND owner_id = "
-        "$2 "
-        "AND file_id = $3",
-        local_path, owner_id, file_id
+        "DELETE FROM FileOwners WHERE file_id = $1",
+        file_id
     );
 
     const pqxx::result res2 = w.exec_params(
@@ -232,7 +269,9 @@ std::string Manager::delete_local_file(
 
     if (owners_left == 0) {
         const pqxx::result untrack_file = w.exec_params(
-            "SELECT DecRep_path, file_name FROM Files WHERE file_id = $1",
+            "DELETE FROM Files "
+            "WHERE id = $1 "
+            "RETURNING DecRep_path, file_name",
             file_id
         );
         auto file_path = untrack_file[0]["DecRep_path"].as<std::string>();
@@ -243,8 +282,7 @@ std::string Manager::delete_local_file(
         w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
     }
     w.commit();
-    std::cout << "File deleted\n";
-    return delete_full_path;
+    std::cout << "File " << delete_full_path << " deleted from DecRep\n";
 }
 
 void Manager::untrack_file(const std::string &full_DecRep_path)
@@ -256,7 +294,7 @@ void Manager::untrack_file(const std::string &full_DecRep_path)
     std::string file_path = p.parent_path().string();
 
     const pqxx::result res = w.exec_params(
-        "SELECT id FROM Files WHERE File_name = $1 AND DecRep_path = $2",
+        "SELECT id FROM Files WHERE file_name = $1 AND DecRep_path = $2",
         file_name, file_path
     );
 
@@ -297,22 +335,40 @@ void Manager::untrack_folder(const std::string &DecRep_path)
     std::cout << "Folder deleted\n";
 }
 
+void Manager::download_file(const std::string &username, const std::string &full_DecRep_path, const std::string &local_path)
+{
+    pqxx::work w(C);
+
+    fs::path p(full_DecRep_path);
+    std::string file_name = p.filename().string();
+    std::string file_path = p.parent_path().string();
+
+    const pqxx::result res = w.exec_params(
+        "SELECT id FROM Files WHERE file_name = $1 AND DecRep_path = $2",
+        file_name, file_path
+    );
+    int file_id = res[0]["id"].as<int>();
+    int user_id = get_user_id(w, username);
+
+    w.exec_params(
+        "INSERT INTO FileOwners (owner_id, file_id, local_path) VALUES ($1, $2, $3)",
+        user_id, file_id, local_path
+    );
+    w.commit();
+}
+
 void Manager::update_local_path(
-    const std::string &old_local_path, // Может быть заменен
+    const std::string &old_local_path,
     const std::string &new_local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+    const std::string &username
 )
 {
     pqxx::work w(C);
 
-    int owner_id = get_user_id(w, ip, port, username);
+    int owner_id = get_user_id(w, username);
 
     w.exec_params(
-        "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 "
-        "AND "
-        "owner_id = $3",
+        "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 AND owner_id = $3",
         new_local_path, old_local_path, owner_id
     );
     w.commit();
@@ -322,21 +378,15 @@ void Manager::update_local_path(
 
 void Manager::update_file(
     const std::string &local_path,
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port,
-    std::string &new_hash,
-    std::size_t &new_size
+    const std::string &username
 )
 {
     pqxx::work w(C);
 
-    int owner_id = get_user_id(w, ip, port, username);
+    int owner_id = get_user_id(w, username);
 
     const pqxx::result res = w.exec_params(
-        "SELECT file_id FROM FileOwners WHERE local_path = $1 AND "
-        "owner_id "
-        "= $2",
+        "SELECT file_id FROM FileOwners WHERE local_path = $1 AND owner_id = $2",
         local_path, owner_id
     );
     if (res.empty()) {
@@ -344,55 +394,59 @@ void Manager::update_file(
     }
     int file_id = res[0]["file_id"].as<int>();
 
+    auto new_size = fs::file_size(local_path); // в байтах
+
     w.exec_params(
-        "UPDATE Files SET file_hash = $1, file_size = $2, "
-        "last_modified = "
-        "NOW() WHERE id = $3",
-        new_hash, new_size, file_id
+        "UPDATE Files SET file_size = $1, last_modified = NOW() WHERE id = $2",
+        new_size, file_id
     );
+
+    w.exec_params(
+        "DELETE FROM FileOwners WHERE file_id = $1 AND owner_id <> $2",
+        file_id, owner_id
+    );
+
     w.commit();
 
     std::cout << "File updated\n";
 }
 
-std::vector<std::string> Manager::delete_user(
-    const std::string &username,
-    const std::string &ip,
-    const std::string &port
+void Manager::delete_user(
+    const std::string &username
 )
 {
     pqxx::work w(C);
     std::vector<std::string> deleted;
 
-    int user_id = get_user_id(w, ip, port, username);
+    int user_id = get_user_id(w, username);
 
     const pqxx::result deleted_files = w.exec_params(
-        "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, "
-        "DecRep_path",
+        "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, DecRep_path",
         user_id
     );
 
-    for (const auto &file : deleted_files) {
-        int file_id = file["file_id"].as<int>();
+    if (!deleted_files.empty()) {
+        for (const auto &file : deleted_files) {
+            int file_id = file["file_id"].as<int>();
 
-        const pqxx::result file_owners = w.exec_params(
-            "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = "
-            "$1",
-            file_id
-        );
+            const pqxx::result file_owners = w.exec_params(
+                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
+                file_id
+            );
 
-        int owners_left = file_owners[0]["remain"].as<int>();
+            int owners_left = file_owners[0]["remain"].as<int>();
 
-        if (owners_left == 0) {
-            deleted.push_back(file["DecRep_path"].as<std::string>());
-            w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
+            if (owners_left == 0) {
+                deleted.push_back(file["DecRep_path"].as<std::string>());
+                w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
+            }
         }
     }
+
     w.exec_params("DELETE FROM Users WHERE id = $1", user_id);
     w.commit();
 
-    std::cout << "User deleted\n";
-    return deleted;
+    std::cout << "User and " << deleted.size() << " files deleted\n";
 }
 
 std::vector<DbFileInfo> Manager::get_files_info()
@@ -407,7 +461,7 @@ std::vector<DbFileInfo> Manager::get_files_info()
 
     for (const pqxx::row &row : R) {
         DbFileInfo info;
-        info.dec_rep_path = row["DecRep_path"].as<std::string>();
+        info.DecRep_path = row["DecRep_path"].as<std::string>();
         info.file_name = row["file_name"].as<std::string>();
 
         files.push_back(info);
@@ -424,7 +478,7 @@ bool Manager::is_users_empty()
         "SELECT EXISTS (SELECT 1 FROM " + w.quote_name("users") + ")"
     );
 
-    return result[0][0].as<bool>();
+    return !result[0][0].as<bool>();
 }
 
 json::value Manager::fetch_table_data(const std::string &table_name)
