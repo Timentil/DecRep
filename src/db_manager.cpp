@@ -72,34 +72,6 @@ void Manager::add_user(
     std::cout << "User added\n";
 }
 
-
-void Manager::insert_into_Users(
-    const std::string &username
-)
-{
-    pqxx::work w(C);
-
-    const pqxx::result res = w.exec_params(
-        "SELECT id FROM Users WHERE username = $1",
-        username
-    );
-    if (res.empty()) {
-        w.exec_params(
-            "INSERT INTO Users (username, first_connection_time) "
-            "VALUES ($1, NOW())",
-            username
-        );
-        w.exec_params(
-            "INSERT INTO MyUsername (username) VALUES ($1)",
-            username
-        );
-        w.commit();
-        std::cout << "User added successfully\n";
-    } else {
-        std::cout << "User already exists\n";
-    }
-}
-
 void Manager::add_file_template(
     pqxx::work &w,
     const std::string &local_file_path,
@@ -232,7 +204,7 @@ void Manager::rename_DecRep_path(
               << "' to '" << new_DecRep_path_name << "\n";
 }
 
-void Manager::delete_local_file(
+std::string Manager::delete_local_file(
     const std::string &local_path,
     const std::string &username
 )
@@ -250,7 +222,7 @@ void Manager::delete_local_file(
 
     if (res.empty()) {
         std::cout << "File doesn't exist\n";
-        return;
+        return delete_full_path;
     }
 
     int file_id = res[0]["file_id"].as<int>();
@@ -283,6 +255,7 @@ void Manager::delete_local_file(
     }
     w.commit();
     std::cout << "File " << delete_full_path << " deleted from DecRep\n";
+    return delete_full_path;
 }
 
 void Manager::untrack_file(const std::string &full_DecRep_path)
@@ -411,7 +384,7 @@ void Manager::update_file(
     std::cout << "File updated\n";
 }
 
-void Manager::delete_user(
+std::vector<std::string> Manager::delete_user(
     const std::string &username
 )
 {
@@ -447,6 +420,7 @@ void Manager::delete_user(
     w.commit();
 
     std::cout << "User and " << deleted.size() << " files deleted\n";
+    return deleted;
 }
 
 std::vector<DbFileInfo> Manager::get_files_info()

@@ -14,14 +14,14 @@ private:
     Events::EventHandler &m_event_handler;
     Client::HTTPClient &m_client;
     search_service::search_service &m_search_service;
-    int m_max_retryes;
+    int m_max_retries;
 
 public:
     ChangePropagator(
         Events::EventHandler &event_handler,
         Client::HTTPClient &client,
         search_service::search_service &search_service,
-        int max_retryes = 3
+        int max_retries = 3
     );
 
     net::awaitable<void> on_local_change(const std::vector<std::string_view> &);

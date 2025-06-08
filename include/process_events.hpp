@@ -33,15 +33,15 @@ public:
     std::string get_db_data();
     void import_data(const std::string &json_str);
 
-    bool add_file(const std::vector<std::string_view> &);
-    bool add_folder(const std::vector<std::string_view> &);
-    bool add_user(const std::vector<std::string_view> &);
-    bool update_file(const std::vector<std::string_view> &);
-    bool update_local_path(const std::vector<std::string_view> &);
+    bool add_file(const std::vector<std::string_view> &) const;
+    bool add_folder(const std::vector<std::string_view> &) const;
+    bool add_user(const std::vector<std::string_view> &) const;
+    bool update_file(const std::vector<std::string_view> &) const;
+    bool update_local_path(const std::vector<std::string_view> &) const;
     bool untrack_file(const std::vector<std::string_view> &);
     bool untrack_folder(const std::vector<std::string_view> &);
-    bool delete_local_file(const std::vector<std::string_view> &);
-    bool delete_user(const std::vector<std::string_view> &);
+    bool delete_local_file(const std::vector<std::string_view> &) const;
+    bool delete_user(const std::vector<std::string_view> &) const;
 
     http::message_generator handle_request(http::request<http::string_body> &&req);
     void handle_response(http::response<http::string_body> &&res);

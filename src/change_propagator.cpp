@@ -1,4 +1,4 @@
-#include "change_propagator.hpp"
+#include "../include/change_propagator.hpp"
 
 #ifndef SERVER_LISTENER_PORT
 #define SERVER_LISTENER_PORT 1498
@@ -28,12 +28,12 @@ ChangePropagator::ChangePropagator(
     Events::EventHandler &event_handler,
     Client::HTTPClient &client,
     search_service::search_service &search_service,
-    int max_retryes = 3
+    int max_retries = 3
 )
     : m_event_handler(event_handler)
     , m_client(client)
     , m_search_service(search_service)
-    , m_max_retryes(max_retryes)
+    , m_max_retries(max_retries)
 {
 }
 

@@ -91,12 +91,12 @@ public:
     );
 
     // удалить пользователя и все его файлы
-    void delete_user(
+    std::vector<std::string> delete_user(
         const std::string &username
     );
 
     // пользователь локально удалил файл (событие Filewatcher-a)
-    void delete_local_file(
+    std::string delete_local_file(
         const std::string &local_path,
         const std::string &username
     );
