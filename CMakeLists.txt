@@ -10,7 +10,9 @@ include(default-options.cmake)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)  # Recommended by Boost.DLL's manual
 
 find_package(Boost 1.87 REQUIRED filesystem)  # Required by Boost.DLL
-find_package(OpenSSL REQUIRED)  # HTTPS connection
+find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
+
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -23,4 +25,6 @@ add_executable(dec-rep src/main.cpp src/db_manager.cpp src/process_events.cpp sr
         src/search_service.cpp
         include/transport_service.hpp
         src/transport_service.cpp)
-target_link_libraries(dec-rep ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(dec-rep ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+target_link_libraries(dec-rep OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(dec-rep ZLIB::ZLIB)
