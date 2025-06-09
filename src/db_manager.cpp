@@ -483,4 +483,52 @@ json::object Manager::get_all_data()
 
     return response_json;
 }
+
+void Manager::insert_into_Users(
+    const std::string &username,
+    const std::string &first_conn_time
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "INSERT INTO Users (username, first_connection_time) "
+        "VALUES ($1, $2)",
+        username, first_conn_time
+    );
+    w.commit();
+}
+
+void Manager::insert_into_Files(
+    const std::string &file_name,
+    const std::string &file_size,
+    const std::string &addition_time,
+    const std::string &last_modified,
+    const std::string &DecRep_path,
+    const std::string &author_id
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "INSERT INTO Files (file_name, file_size, addition_time, last_modified, DecRep_path, author_id) "
+        "VALUES ($1, $2, $3, $4, $5, $6)",
+        file_name, file_size, addition_time, last_modified, DecRep_path, author_id
+    );
+    w.commit();
+}
+
+void Manager::insert_into_FileOwners(
+    const std::string &owner_id,
+    const std::string &file_id,
+    const std::string &local_path
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "INSERT INTO FileOwners (owner_id, file_id, local_path) "
+        "VALUES ($1, $2, $3)",
+        owner_id, file_id, local_path
+    );
+    w.commit();
+}
+
 } // namespace DBManager

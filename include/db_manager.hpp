@@ -125,6 +125,26 @@ public:
 
     json::object get_all_data();
 
+    void insert_into_Users(
+        const std::string &username,
+        const std::string &first_conn_time = "NOW()"
+    );
+
+    void insert_into_Files(
+        const std::string &file_name,
+        const std::string &file_size,
+        const std::string &addition_time,
+        const std::string &last_modified,
+        const std::string &DecRep_path,
+        const std::string &author_id
+    );
+
+    void insert_into_FileOwners(
+        const std::string &owner_id,
+        const std::string &file_id,
+        const std::string &local_path
+    );
+
 };
 } // namespace DBManager
 
