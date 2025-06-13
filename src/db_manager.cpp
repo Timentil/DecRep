@@ -156,7 +156,7 @@ void Manager::add_folder(
     std::cout << "Folder added\n";
 }
 
-void Manager::rename_file(
+void Manager::rename_DecRep_file(
     const std::string &DecRep_path,
     const std::string &old_file_name,
     const std::string &new_file_name
@@ -170,6 +170,22 @@ void Manager::rename_file(
     );
     w.commit();
     std::cout << "File renamed successfully \n";
+}
+
+void Manager::rename_DecRep_folder(
+    const std::string &old_DecRep_path_name,
+    const std::string &new_DecRep_path_name
+)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "UPDATE Files SET DecRep_path = $1 "
+        "WHERE DecRep_path = $2",
+        new_DecRep_path_name, old_DecRep_path_name
+    );
+    w.commit();
+    std::cout << "DecRep_path renamed from '" << old_DecRep_path_name
+              << "' to '" << new_DecRep_path_name << "\n";
 }
 
 void Manager::change_DecRep_path(
@@ -186,22 +202,6 @@ void Manager::change_DecRep_path(
     );
     w.commit();
     std::cout << "Path changed for file '" << file_name << "'\n";
-}
-
-void Manager::rename_DecRep_path(
-    const std::string &old_DecRep_path_name,
-    const std::string &new_DecRep_path_name
-)
-{
-    pqxx::work w(C);
-    w.exec_params(
-        "UPDATE Files SET DecRep_path = $1 "
-        "WHERE DecRep_path = $2",
-        new_DecRep_path_name, old_DecRep_path_name
-    );
-    w.commit();
-    std::cout << "DecRep_path renamed from '" << old_DecRep_path_name
-              << "' to '" << new_DecRep_path_name << "\n";
 }
 
 std::string Manager::delete_local_file(
@@ -330,7 +330,7 @@ void Manager::download_file(const std::string &username, const std::string &full
     w.commit();
 }
 
-void Manager::update_local_path(
+void Manager::update_local_file_path(
     const std::string &old_local_path,
     const std::string &new_local_path,
     const std::string &username
@@ -347,6 +347,25 @@ void Manager::update_local_path(
     w.commit();
 
     std::cout << "Local path updated\n";
+}
+
+void Manager::update_local_folder_path(
+    const std::vector<std::string> &old_local_paths,
+    const std::vector<std::string> &new_local_paths,
+    const std::string &username
+)
+{
+    pqxx::work w(C);
+
+    int owner_id = get_user_id(w, username);
+
+    for (int i = 0; i < old_local_paths.size(); i++) {
+        w.exec_params(
+            "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 AND owner_id = $3",
+            new_local_paths[i], old_local_paths[i], owner_id
+        );
+    }
+    w.commit();
 }
 
 void Manager::update_file(

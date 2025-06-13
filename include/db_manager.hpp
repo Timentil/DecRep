@@ -62,13 +62,13 @@ public:
         const std::string &username
     );
 
-    void rename_file(
+    void rename_DecRep_file(
     const std::string &DecRep_path,
     const std::string &old_file_name,
     const std::string &new_file_name
     );
 
-    void rename_DecRep_path(
+    void rename_DecRep_folder(
     const std::string &old_DecRep_path_name,
     const std::string &new_DecRep_path_name
     );
@@ -102,13 +102,17 @@ public:
     );
 
     // пользователь локально изменил путь(имя) файла (событие Filewatcher-a)
-    void update_local_path(
+    void update_local_file_path(
         const std::string &old_local_path,
         const std::string &new_local_path,
         const std::string &username
     );
 
-    // TODO: update_local_folder_path (пользователь переименовал директорию -> надо обновить файлов в ней)
+    void update_local_folder_path(
+        const std::vector<std::string> &old_local_paths,
+        const std::vector<std::string> &new_local_paths,
+        const std::string &username
+    );
 
     // пользователь локально изменил содержимое файла (событие Filewatcher-a)
     // (теперь он единственный владелец)
