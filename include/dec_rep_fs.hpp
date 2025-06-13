@@ -33,11 +33,14 @@ struct Directory final : Node {
 };
 
 struct FS {
+private:
     Directory root;
-    FS();
 
     static std::vector<std::string>
     split_path(const std::string &path, char delim);
+
+public:
+    FS();
 
     void add_file(const std::string &path, const std::string &file_name);
 
@@ -50,9 +53,22 @@ struct FS {
 
     void delete_user_files(const std::vector<std::string> &file_paths);
 
+    void rename_file(const std::string &DecRep_path, const std::string &old_file_name, const std::string &new_file_name);
+
+    void rename_folder(
+        const std::string &old_DecRep_path_name,
+        const std::string &new_DecRep_path_name
+    );
+
+    void change_path(
+        const std::string &file_name,
+        const std::string &old_DecRep_path,
+        const std::string &new_DecRep_path
+    );
+
     void print_DecRepFS() const;
 
-    std::vector<std::string> find(
+    std::vector<std::string> find_path(
         const std::string &name,
         const Node *node = nullptr,
         const std::string &curr_path = ""

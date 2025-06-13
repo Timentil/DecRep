@@ -1,4 +1,4 @@
-#include "dec_rep_fs.hpp"
+#include "../include/dec_rep_fs.hpp"
 
 namespace fs = std::filesystem;
 
@@ -38,10 +38,6 @@ FS::split_path(const std::string &path, const char delim)
     std::string subdir;
     while (std::getline(ss, subdir, delim)) {
         if (!subdir.empty()) {
-            // По идее, вернёт пустую строку, если исходная
-            // начинается/заканчивается разделителем (ну или 2 разделителя
-            // подряд). Думаю, можно будет убрать, когда сделаем
-            // где-нибудь обработку путей
             subdirs.push_back(subdir);
         }
     }
@@ -58,11 +54,6 @@ void FS::add_file(const std::string &path, const std::string &file_name)
             subdir, std::make_unique<Directory>(subdir)
         );
         current = dynamic_cast<Directory *>(current->children[subdir].get());
-        // Тут может быть ошибка, если по такому пути/части пути до этого уже
-        // был создан файл. Например, уже существует folder/subfolder/file1, а
-        // хотим добавить folder/subfolder/file1/file2. По факту это может быть
-        // косяком пользователя и вопрос в том, где его обрабатывать. Пусть пока
-        // тут, а там разберёмся
         if (!current) {
             throw std::runtime_error("Not a directory");
         }
@@ -121,16 +112,10 @@ void FS::delete_file(const std::string &path)
 {
     const std::vector<std::string> subdirs = split_path(path, '/');
 
-    // Только если пустая строка, надо перенести отсюда
     if (subdirs.empty()) {
         throw std::runtime_error("Cannot delete nothing.");
     }
-    // В отличие от добавления файла, где мы указываем путь без самого файла и
-    // имя файла отдельно, удаление происходит по полному пути (ну, при
-    // добавлении нужно ещё локальный путь указывать, и имя можно дёрнуть из
-    // него). Собственно, поэтому тут не range-based for P.S. Можно переделать
-    // эту функцию по неполному пути + имя или добавление по 2-ум полным путям
-    // (получается, при добавлении можем задать имя файла)
+
     Directory *current = &root;
     for (size_t i = 0; i < subdirs.size() - 1; i++) {
         auto it = current->children.find(subdirs[i]);
@@ -150,7 +135,7 @@ void FS::delete_file(const std::string &path)
 
     if (dynamic_cast<File *>(it->second.get()) == nullptr) {
         throw std::runtime_error("Not a file"
-        ); // Проверка, что получили файл, а не папку
+        );
     }
 
     current->children.erase(it);
@@ -179,7 +164,7 @@ void FS::delete_folder(const std::string &path)
 
     if (dynamic_cast<Directory *>(it->second.get()) == nullptr) {
         throw std::runtime_error("Not a directory"
-        ); // Проверка, что получили папку, а не файл
+        );
     }
 
     current->children.erase(it);
@@ -192,12 +177,183 @@ void FS::delete_user_files(const std::vector<std::string> &file_paths)
     }
 }
 
+void FS::rename_file(
+    const std::string &DecRep_path,
+    const std::string &old_file_name,
+    const std::string &new_file_name
+)
+{
+    std::vector<std::string> subdirs = split_path(DecRep_path, '/');
+
+    Directory *current = &root;
+    for (const auto &subdir : subdirs) {
+        auto it = current->children.find(subdir);
+        if (it == current->children.end()) {
+            throw std::runtime_error("Directory does not exist: " + subdir);
+        }
+        current = dynamic_cast<Directory *>(it->second.get());
+        if (!current) {
+            throw std::runtime_error(subdir + " is not a directory");
+        }
+    }
+
+    const auto file_it = current->children.find(old_file_name);
+    if (file_it == current->children.end()) {
+        throw std::runtime_error("File does not exist: " + old_file_name);
+    }
+
+    if (dynamic_cast<File *>(file_it->second.get()) == nullptr) {
+        throw std::runtime_error(old_file_name + " is not a file");
+    }
+
+    if (current->children.contains(new_file_name)) {
+        throw std::runtime_error(new_file_name + " already exists");
+    }
+
+    auto node_ptr = std::move(file_it->second);
+    node_ptr->name = new_file_name;
+    current->children.erase(file_it);
+    current->children.emplace(
+        new_file_name,
+        std::move(node_ptr)
+    );
+}
+
+void FS::rename_folder(
+    const std::string &old_DecRep_path_name,
+    const std::string &new_DecRep_path_name
+)
+{
+    if (new_DecRep_path_name == old_DecRep_path_name || new_DecRep_path_name.rfind(old_DecRep_path_name + "/", 0) == 0) {
+        throw std::runtime_error(
+            "Don't move folder into itself or its subdirectory, silly!!"
+        );
+    }
+
+    auto old_subdirs = split_path(old_DecRep_path_name, '/');
+    if (old_subdirs.empty()) {
+        throw std::runtime_error("Empty path");
+    }
+    std::vector<std::string> old_parent_subdirs(
+        old_subdirs.begin(), old_subdirs.end() - 1
+    );
+    const std::string &old_folder_name = old_subdirs.back();
+
+    Directory *old_parent = &root;
+    for (const auto &p : old_parent_subdirs) {
+        auto it = old_parent->children.find(p);
+        if (it == old_parent->children.end()) {
+            throw std::runtime_error("Wrong path");
+        }
+        old_parent = dynamic_cast<Directory *>(it->second.get());
+        if (!old_parent) {
+            throw std::runtime_error(p + " in old path is not a directory");
+        }
+    }
+
+    auto old_it = old_parent->children.find(old_folder_name);
+    if (old_it == old_parent->children.end()) {
+        throw std::runtime_error("Directory to rename does not exist: " + old_folder_name);
+    }
+
+    if (dynamic_cast<Directory *>(old_it->second.get()) == nullptr) {
+        throw std::runtime_error(old_folder_name + " is not a directory");
+    }
+
+    auto dir_ptr = std::move(old_it->second);
+    old_parent->children.erase(old_it);
+
+    auto new_subdirs = split_path(new_DecRep_path_name, '/');
+    if (new_subdirs.empty()) {
+        throw std::runtime_error("New path is empty");
+    }
+    std::vector<std::string> new_parent_subdirs(
+        new_subdirs.begin(), new_subdirs.end() - 1
+    );
+    const std::string &new_folder_name = new_subdirs.back();
+
+    Directory *new_parent = &root;
+    for (const auto &p : new_parent_subdirs) {
+        auto [it, inserted] = new_parent->children.try_emplace(
+            p,
+            std::make_unique<Directory>(p)
+        );
+        new_parent = dynamic_cast<Directory *>(it->second.get());
+        if (!new_parent) {
+            throw std::runtime_error(p + " in new path is not a directory");
+        }
+    }
+
+    if (new_parent->children.contains(new_folder_name)) {
+        throw std::runtime_error(
+            new_folder_name + " already exists"
+        );
+    }
+
+    auto *moved_dir = dynamic_cast<Directory *>(dir_ptr.get());
+    moved_dir->name = new_folder_name;
+    new_parent->children.emplace(new_folder_name, std::move(dir_ptr));
+}
+
+void FS::change_path(
+    const std::string &file_name,
+    const std::string &old_DecRep_path,
+    const std::string &new_DecRep_path
+)
+{
+
+    auto old_subdirs = split_path(old_DecRep_path, '/');
+    Directory *old_parent = &root;
+    for (const auto &p : old_subdirs) {
+        auto it = old_parent->children.find(p);
+        if (it == old_parent->children.end()) {
+            throw std::runtime_error("Old directory does not exist: " + p);
+        }
+        old_parent = dynamic_cast<Directory *>(it->second.get());
+        if (!old_parent) {
+            throw std::runtime_error(p + " in old path is not a directory");
+        }
+    }
+
+    const auto file_it = old_parent->children.find(file_name);
+    if (file_it == old_parent->children.end()) {
+        throw std::runtime_error("File does not exist in old path: " + file_name);
+    }
+
+    if (dynamic_cast<File *>(file_it->second.get()) == nullptr) {
+        throw std::runtime_error(file_name + " is not a file");
+    }
+    auto file_ptr = std::move(file_it->second);
+    old_parent->children.erase(file_it);
+
+    auto new_subdirs = split_path(new_DecRep_path, '/');
+    Directory *new_parent = &root;
+    for (const auto &p : new_subdirs) {
+        auto [it, inserted] = new_parent->children.try_emplace(
+            p,
+            std::make_unique<Directory>(p)
+        );
+        new_parent = dynamic_cast<Directory *>(it->second.get());
+        if (!new_parent) {
+            throw std::runtime_error(p + " in new path is not a directory");
+        }
+    }
+
+    if (new_parent->children.contains(file_name)) {
+        throw std::runtime_error(
+            old_DecRep_path + " already has a file named: " + file_name
+        );
+    }
+
+    new_parent->children.emplace(file_name, std::move(file_ptr));
+}
+
 void FS::print_DecRepFS() const
 {
     root.print(INITIAL_INDENT);
 }
 
-std::vector<std::string> FS::find(
+std::vector<std::string> FS::find_path(
     const std::string &name,
     const Node *node,
     const std::string &curr_path
@@ -222,7 +378,7 @@ std::vector<std::string> FS::find(
 
     if (const auto *dir = dynamic_cast<const Directory *>(node)) {
         for (const auto &child : dir->children) {
-            std::vector<std::string> child_res = find(name, child.second.get(), new_path);
+            std::vector<std::string> child_res = find_path(name, child.second.get(), new_path);
             res.insert(res.end(), child_res.begin(), child_res.end());
         }
     }
