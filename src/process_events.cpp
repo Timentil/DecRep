@@ -48,7 +48,12 @@ EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs)
     func_map = {
         { "add_file", [this](const auto &params) { return this->add_file(params); } },
         { "add_folder", [this](const auto &params) { return this->add_folder(params); } },
+        { "rename_DecRep_file", [this](const auto &params) { return this->rename_DecRep_file(params); } },
+        { "rename_DecRep_folder", [this](const auto &params) { return this->rename_DecRep_folder(params); } },
+        { "change_DecRep_path", [this](const auto &params) { return this->change_DecRep_path(params); } },
         { "change_file", [this](const auto &params) { return this->update_file(params); } },
+        { "update_local_file_path", [this](const auto &params) { return this->update_local_file_path(params); } },
+        { "update_local_folder_path", [this](const auto &params) { return this->update_local_folder_path(params); } },
         { "untrack_file", [this](const auto &params) { return this->untrack_file(params); } },
         { "untrack_folder", [this](const auto &params) { return this->untrack_folder(params); } },
         { "delete_local_file", [this](const auto &params) { return this->delete_local_file(params); } }
@@ -70,8 +75,6 @@ void EventHandler::import_data(const std::string &json_str)
         json::object user = user_val.as_object();
         dbManager.insert_into_Users(
             user["username"].as_string().c_str(),
-            user["ip"].as_string().c_str(),
-            user["port"].as_string().c_str(),
             user["first_connection_time"].as_string().c_str()
         );
     }
@@ -82,7 +85,6 @@ void EventHandler::import_data(const std::string &json_str)
         dbManager.insert_into_Files(
             file["file_name"].as_string().c_str(),
             file["file_size"].as_string().c_str(),
-            file["file_hash"].as_string().c_str(),
             file["addition_time"].as_string().c_str(),
             file["last_modified"].as_string().c_str(),
             file["DecRep_path"].as_string().c_str(),
@@ -136,6 +138,53 @@ bool EventHandler::add_folder(const std::vector<std::string_view> &params) const
     return EXIT_SUCCESS;
 }
 
+bool EventHandler::rename_DecRep_file(const std::vector<std::string_view> &params) const
+{
+    if (params.size() != 3) {
+        return EXIT_FAILURE;
+    }
+
+    const std::string DecRep_path(params[0]);
+    const std::string old_file_name(params[1]);
+    const std::string new_file_name(params[2]);
+
+    dbManager.rename_DecRep_file(DecRep_path, old_file_name, new_file_name);
+    decRepFS.rename_file(DecRep_path, old_file_name, new_file_name);
+
+    return EXIT_SUCCESS;
+}
+
+bool EventHandler::rename_DecRep_folder(const std::vector<std::string_view> &params) const
+{
+    if (params.size() != 2) {
+        return EXIT_FAILURE;
+    }
+
+    const std::string old_DecRep_path_name(params[0]);
+    const std::string new_old_DecRep_path_name(params[1]);
+
+    dbManager.rename_DecRep_folder(old_DecRep_path_name, new_old_DecRep_path_name);
+    decRepFS.rename_folder(old_DecRep_path_name, new_old_DecRep_path_name);
+
+    return EXIT_SUCCESS;
+}
+
+bool EventHandler::change_DecRep_path(const std::vector<std::string_view> &params) const
+{
+    if (params.size() != 3) {
+        return EXIT_FAILURE;
+    }
+
+    const std::string file_name(params[0]);
+    const std::string old_DecRep_path(params[1]);
+    const std::string new_DecRep_path(params[2]);
+
+    dbManager.change_DecRep_path(file_name,old_DecRep_path, new_DecRep_path);
+    decRepFS.change_path(file_name, old_DecRep_path, new_DecRep_path);
+
+    return EXIT_SUCCESS;
+}
+
 bool EventHandler::add_user(const std::vector<std::string_view> &params) const
 {
     if (params.size() != 2) {
@@ -168,7 +217,7 @@ bool EventHandler::update_file(const std::vector<std::string_view> &params) cons
     return EXIT_SUCCESS;
 }
 
-bool EventHandler::update_local_path(const std::vector<std::string_view> &params
+bool EventHandler::update_local_file_path(const std::vector<std::string_view> &params
 ) const
 {
     if (params.size() != 3) {
@@ -179,16 +228,35 @@ bool EventHandler::update_local_path(const std::vector<std::string_view> &params
     const std::string new_local_path(params[1]);
     const std::string username(params[2]);
 
-    dbManager.update_local_path(
+    dbManager.update_local_file_path(
         old_local_path, new_local_path, username
     );
 
     return EXIT_SUCCESS;
 }
 
-bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
+bool EventHandler::update_local_folder_path(const std::vector<std::string_view> &params
+) const
 {
     if (params.size() != 3) {
+        return EXIT_FAILURE;
+    }
+
+    // TODO: FIX
+    const std::vector<std::string> old_local_paths(params[0]);
+    const std::vector<std::string> new_local_paths(params[1]);
+    const std::string username(params[2]);
+
+    dbManager.update_local_folder_path(
+        old_local_paths, new_local_paths, username
+    );
+
+    return EXIT_SUCCESS;
+}
+
+bool EventHandler::untrack_file(const std::vector<std::string_view> &params) const
+{
+    if (params.size() != 1) {
         return EXIT_FAILURE;
     }
 
@@ -200,9 +268,9 @@ bool EventHandler::untrack_file(const std::vector<std::string_view> &params)
     return EXIT_SUCCESS;
 }
 
-bool EventHandler::untrack_folder(const std::vector<std::string_view> &params)
+bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) const
 {
-    if (params.size() != 3) {
+    if (params.size() != 1) {
         return EXIT_FAILURE;
     }
 

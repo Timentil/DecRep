@@ -35,11 +35,15 @@ public:
 
     bool add_file(const std::vector<std::string_view> &) const;
     bool add_folder(const std::vector<std::string_view> &) const;
+    bool rename_DecRep_file(const std::vector<std::string_view> &) const;
+    bool rename_DecRep_folder(const std::vector<std::string_view> &) const;
+    bool change_DecRep_path(const std::vector<std::string_view> &) const;
     bool add_user(const std::vector<std::string_view> &) const;
     bool update_file(const std::vector<std::string_view> &) const;
-    bool update_local_path(const std::vector<std::string_view> &) const;
-    bool untrack_file(const std::vector<std::string_view> &);
-    bool untrack_folder(const std::vector<std::string_view> &);
+    bool update_local_file_path(const std::vector<std::string_view> &) const;
+    bool update_local_folder_path(const std::vector<std::string_view> &) const;
+    bool untrack_file(const std::vector<std::string_view> &) const;
+    bool untrack_folder(const std::vector<std::string_view> &) const;
     bool delete_local_file(const std::vector<std::string_view> &) const;
     bool delete_user(const std::vector<std::string_view> &) const;
 
