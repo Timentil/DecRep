@@ -1,4 +1,4 @@
-#include "change_propagator.hpp"
+#include "../include/change_propagator.hpp"
 
 #ifndef SERVER_LISTENER_PORT
 #define SERVER_LISTENER_PORT 1498

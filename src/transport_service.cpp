@@ -1,4 +1,4 @@
-#include "transport_service.hpp"
+#include "../include/transport_service.hpp"
 #include <boost/uuid.hpp>
 #include <iostream>
 
@@ -135,13 +135,13 @@ void transport_service::Server::run() const {
         acceptor.bind(endpoint);
         acceptor.listen();
 
-        logger.log("Server is running on port " +  port + '\n');
+        logger.log("Server is running on port " +  std::to_string(port) + "\n");
 
         for (;;) {
-            logger.log("Waiting for a connection..." + '\n');
+            logger.log("Waiting for a connection...\n");
             tcp::socket socket{ioc};
             acceptor.accept(socket);
-            logger.log("Handle response" + '\n');
+            logger.log("Handle response\n");
             std::thread(
                 [this](tcp::socket m_socket) {
                     do_session(m_socket);

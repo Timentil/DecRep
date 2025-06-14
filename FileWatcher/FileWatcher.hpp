@@ -1,7 +1,7 @@
 #ifndef FILEWATCHER_HPP
 #define FILEWATCHER_HPP
 
-#include "change_propagator.hpp"
+#include "../include/change_propagator.hpp"
 #include <boost/asio.hpp>
 #include <efsw/efsw.hpp>
 #include <filesystem>
