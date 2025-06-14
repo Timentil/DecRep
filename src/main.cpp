@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
     }
 
     const auto connection_str = std::format(
-        "host=localhost port=5432 dbname={} user=postgres password={}", argv[2],
-        argv[3]
+        "host=localhost port=5432 dbname={} user=postgres password={}", argv[1],
+        argv[2]
     );
 
     try {
@@ -74,21 +74,25 @@ int main(int argc, char *argv[])
 
         std::cout << "App is running...\n";
         std::string line {};
-        for (;;) {
-            std::cout << "Enter your comands (or type 'help')\n";
-            std::getline(std::cin, line);
-            std::vector<std::string_view> parts = Events::split_str(line, ' ');
-            if (parts.empty()) {
-                continue;
-            }
-
-            std::string command_name(parts[0]);
-            if (command_name == "help") {
-                std::cout << HELP_MESSAGE << '\n';
-                continue;
-            }
-            [[maybe_unused]] auto a = app.m_propagator.on_local_change(parts);
+        for(;;) {
+            std::cin >> line;
+            transport_service::get_file("192.168.99.12", "test.txt", ".", 0);
         }
+        // for (;;) {
+        //     std::cout << "Enter your comands (or type 'help')\n";
+        //     std::getline(std::cin, line);
+        //     std::vector<std::string_view> parts = Events::split_str(line, ' ');
+        //     if (parts.empty()) {
+        //         continue;
+        //     }
+
+        //     std::string command_name(parts[0]);
+        //     if (command_name == "help") {
+        //         std::cout << HELP_MESSAGE << '\n';
+        //         continue;
+        //     }
+        //     [[maybe_unused]] auto a = app.m_propagator.on_local_change(parts);
+        // }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;

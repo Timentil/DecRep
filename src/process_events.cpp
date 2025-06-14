@@ -354,7 +354,7 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
     return response(http::status::accepted);
 }
 
-void handle_response(http::response<http::string_body> &&res)
+void EventHandler::handle_response(http::response<http::string_body> &&res)
 {
     if (res.result() != http::status::accepted) {
         std::cout << res.body() << '\n';

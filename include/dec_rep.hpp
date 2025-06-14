@@ -8,6 +8,7 @@
 #include "server.hpp"
 #include "search_service.hpp"
 #include "change_propagator.hpp"
+#include "transport_service.hpp"
 
 // - connect to database
 // - run server
@@ -23,10 +24,11 @@ public:
     DBManager::Manager m_db_manager;
     DecRepFS::FS m_dec_rep_fs;
     Events::EventHandler m_event_handler;
-    Server::HTTPServer m_server;
+    // Server::HTTPServer m_server;
     Client::HTTPClient m_client;
     search_service::search_service m_search_service;
     ChangePropagator::ChangePropagator m_propagator;
+    transport_service::Server m_server;
 
     DecRep(const std::string &address, int port, const std::string &connection_data);
 
