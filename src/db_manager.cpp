@@ -1,4 +1,4 @@
-#include "../include/db_manager.hpp"
+#include "db_manager.hpp"
 
 namespace fs = std::filesystem;
 
@@ -359,7 +359,7 @@ void Manager::update_local_folder_path(
 
     int owner_id = get_user_id(w, username);
 
-    for (int i = 0; i < old_local_paths.size(); i++) {
+    for (size_t i = 0; i < old_local_paths.size(); i++) {
         w.exec_params(
             "UPDATE FileOwners SET local_path = $1 WHERE local_path = $2 AND owner_id = $3",
             new_local_paths[i], old_local_paths[i], owner_id

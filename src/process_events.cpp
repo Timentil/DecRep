@@ -1,4 +1,4 @@
-#include "../include/process_events.hpp"
+#include "process_events.hpp"
 
 namespace fs = std::filesystem;
 
@@ -243,8 +243,8 @@ bool EventHandler::update_local_folder_path(const std::vector<std::string_view> 
     }
 
     // TODO: FIX
-    const std::vector<std::string> old_local_paths(params[0]);
-    const std::vector<std::string> new_local_paths(params[1]);
+    const std::vector<std::string> old_local_paths(1, std::string(params[0]));
+    const std::vector<std::string> new_local_paths(1, std::string(params[1]));
     const std::string username(params[2]);
 
     dbManager.update_local_folder_path(

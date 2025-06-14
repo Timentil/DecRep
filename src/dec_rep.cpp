@@ -24,7 +24,7 @@ void DecRep::start_server(const std::string &address, const int port)
 void DecRep::construct_dec_rep_fs() {
     auto files = m_db_manager.get_files_info();
     for (auto file : files) {
-        m_dec_rep_fs.add_file(file.dec_rep_path, file.file_name);
+        m_dec_rep_fs.add_file(file.DecRep_path, file.file_name);
     }
 }
 

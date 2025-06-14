@@ -87,8 +87,7 @@ int main(int argc, char *argv[])
                 std::cout << HELP_MESSAGE << '\n';
                 continue;
             }
-            
-            app.m_propagator.on_local_change(parts);
+            [[maybe_unused]] auto a = app.m_propagator.on_local_change(parts);
         }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;

@@ -1,4 +1,4 @@
-#include "../include/change_propagator.hpp"
+#include "change_propagator.hpp"
 
 #ifndef SERVER_LISTENER_PORT
 #define SERVER_LISTENER_PORT 1498
@@ -28,7 +28,7 @@ ChangePropagator::ChangePropagator(
     Events::EventHandler &event_handler,
     Client::HTTPClient &client,
     search_service::search_service &search_service,
-    int max_retries = 3
+    int max_retries
 )
     : m_event_handler(event_handler)
     , m_client(client)
@@ -50,11 +50,11 @@ net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::st
     if (it != m_event_handler.func_map.end()) {
         if (!it->second(command_args)) {
             std::cout << "Invalid args count:" << command_args.size() << '\n';
-            return;
+            co_return;
         }
     } else {
         std::cout << "Unknown command:" << command_name << '\n';
-        return;
+        co_return;
     }
 
     // Получаем ip

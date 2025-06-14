@@ -4,7 +4,7 @@
 #include "db_manager.hpp"
 #include "dec_rep_fs.hpp"
 #include <boost/beast/http.hpp>
-#include <boost/json/src.hpp>
+#include <boost/json.hpp>
 #include <functional>
 #include <string_view>
 #include <unordered_map>
