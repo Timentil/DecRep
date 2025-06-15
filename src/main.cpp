@@ -20,20 +20,20 @@ const std::string HELP_MESSAGE = R"(
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3) {
-        std::cerr << "Usage: dec-rep <db_name> <db_password>\n"
+    if (argc != 4) {
+        std::cerr << "Usage: dec-rep <db_name> <db_user> <user_password>\n"
                   << "Example:\n"
                   << "    ./dec-rep mydb 123123\n";
         return EXIT_FAILURE;
     }
 
-    const auto connection_str = std::format(
-        "host=localhost port=5432 dbname={} user=postgres password={}", argv[1],
-        argv[2]
+    const auto CONNECTION_STR = std::format(
+        "host=localhost port=5432 dbname={} user={} password={}", argv[1], argv[2],
+        argv[3]
     );
 
     try {
-        DecRep app("0.0.0.0", SERVER_LISTENER_PORT, connection_str);
+        DecRep app("0.0.0.0", SERVER_LISTENER_PORT, CONNECTION_STR);
         app.run();
 
         // TODO

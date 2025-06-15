@@ -1,6 +1,7 @@
 #include "transport_service.hpp"
 #include <boost/uuid.hpp>
 #include <iostream>
+#include <chrono>
 
 #include <boost/iostreams/filter/zlib.hpp>
 
@@ -61,7 +62,7 @@ http::response<http::string_body> transport_service::Server::handle_response(
         } else if (req.method() == http::verb::post) {
             const std::string file_path = dec_rep_path +
             std::string(req.target());
-            get_file(client_address, std::string(req.target()), dec_rep_path, get_local_time(file_path));
+            get_file_inner(client_address, std::string(req.target()), dec_rep_path, get_local_time(file_path));
             logger.log("Get file: " + file_path + '\n');
     } else {
         res.result(http::status::bad_request);
@@ -117,9 +118,20 @@ void transport_service::Server::do_session(
     }
 }
 
-void transport_service::Server::run() const {
-    try {
-        net::io_context ioc{thread_count};
+void transport_service::Server::inner_closer(tcp::acceptor &socket) const {
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if (!is_running && socket.is_open()) {
+            socket.close();
+            break;
+        }
+    }
+}
+
+void transport_service::Server::inner_run() const {
+        try {
+            is_running = true;
+            net::io_context ioc{thread_count};
         std::vector<std::thread> v;
         for (auto i = thread_count - 1; i > 0; --i) {
             v.emplace_back([&ioc] { ioc.run(); });
@@ -135,13 +147,20 @@ void transport_service::Server::run() const {
         acceptor.bind(endpoint);
         acceptor.listen();
 
-        logger.log("Server is running on port " +  std::to_string(port) + "\n");
+        logger.log("Server is running on port " +  port + '\n');
 
-        for (;;) {
-            logger.log("Waiting for a connection...\n");
+            // std::thread(
+            //     [this](tcp::acceptor &m_socket) {
+            //         inner_closer(m_socket);
+            //     },
+            //     std::ref(acceptor)
+            // ).detach();
+
+        while (is_running) {
+            logger.log("Waiting for a connection..." + '\n');
             tcp::socket socket{ioc};
             acceptor.accept(socket);
-            logger.log("Handle response\n");
+            logger.log("Handle response" + '\n');
             std::thread(
                 [this](tcp::socket m_socket) {
                     do_session(m_socket);
@@ -154,7 +173,7 @@ void transport_service::Server::run() const {
     }
 }
 
-void transport_service::get_file(
+int transport_service::get_file_inner(
     const std::string &server_address,
     const std::string &file_name,
     const std::string &file_path,
@@ -196,7 +215,7 @@ void transport_service::get_file(
             if (!out_file) {
                 std::cerr << "Failed to open file for writing: "
                           << file_path + file_name << std::endl;
-                return;
+                return 1;
             }
 
             std::string file_data = beast::buffers_to_string(res.body().data());
@@ -237,12 +256,32 @@ void transport_service::get_file(
         if (ec) {
             throw beast::system_error{ec};
         }
+        return 0;
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
     }
 }
 
-void transport_service::send_file(const std::string &server_address,
+void transport_service::get_file(
+    const std::string &server_address,
+    const std::string &file_name,
+    const std::string &file_path,
+    const unsigned long local_clock
+) {
+    int time = 0;
+    while (time < 3) {
+        time++;
+        int result = get_file_inner(server_address, file_name, file_path, local_clock);
+        if (result == 0) {
+            return;
+        }
+        std::cerr << "Trying to download another time." << std::endl;
+    }
+    throw std::runtime_error("Failed to download");
+}
+
+void transport_service::send_file_inner(const std::string &server_address,
                                   const std::string &file_name,
                                   const std::string &file_path,
                                   const unsigned long local_clock) {
@@ -300,6 +339,7 @@ void transport_service::send_file(const std::string &server_address,
 
 
 [[nodiscard]] std::string transport_service::sha1_hash_file(const std::string &filename) {
+#ifdef HASH
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
         return {};
@@ -323,6 +363,9 @@ void transport_service::send_file(const std::string &server_address,
         oss << std::setw(8) << value;
     }
     return oss.str();
+#else
+    return "";
+#endif
 }
 
 [[nodiscard]] std::string transport_service::deflate_compress(const std::string& data, const int compression_level) {
