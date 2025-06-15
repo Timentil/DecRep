@@ -5,7 +5,11 @@ FileWatcher::FileWatcher(ChangePropagator::ChangePropagator &prop, boost::asio::
     : prop_(prop)
     , io_(io)
     , callback_(std::move(cb))
-    , watcher_(std::make_unique<efsw::FileWatcher>(FLAG))
+#if defined(_WIN32) || defined(_WIN64)
+    , watcher_(std::make_unique<efsw::FileWatcher>(false))
+#else
+    , watcher_(std::make_unique<efsw::FileWatcher>(true))
+#endif
 { // generic
 }
 
