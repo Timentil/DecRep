@@ -68,6 +68,11 @@ void FS::add_folder(
     const std::string &local_path
 )
 {
+    if (!fs::is_directory(local_path)) {
+        std::cout << "Local path is not a directory: " << local_path << '\n';
+        return;
+    }
+
     const fs::path folder_path(DecRep_path);
     std::string folder_name = folder_path.filename().string();
     const std::string parent_path = folder_path.parent_path().string();
