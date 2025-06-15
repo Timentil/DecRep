@@ -1,7 +1,8 @@
 #include "transport_service.hpp"
-#include <boost/iostreams/filter/zlib.hpp>
 #include <boost/uuid.hpp>
 #include <iostream>
+
+#include <boost/iostreams/filter/zlib.hpp>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -11,19 +12,15 @@ namespace zlib = boost::iostreams::zlib;
 using tcp = net::ip::tcp;
 
 http::response<http::string_body> transport_service::Server::handle_response(
-    const http::request<http::string_body> &req,
-    const std::string &client_address
+    const http::request<http::string_body> &req, const std::string &client_address
 ) const {
     http::response<http::string_body> res{http::status::ok, req.version()};
 
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "text/plain");
     res.keep_alive(req.keep_alive());
-    logger.log(
-        std::string("Received request from ") + client_address + ": " +
-        std::string(req.method_string()) + " " + std::string(req.target()) +
-        '\n'
-    );
+    logger.log(std::string("Received request from ") + client_address
+             + ": " + std::string(req.method_string()) + " " + std::string(req.target()) + '\n');
 
     if (req.method() == http::verb::get) {
         const std::string file_path = dec_rep_path + std::string(req.target());
@@ -35,28 +32,21 @@ http::response<http::string_body> transport_service::Server::handle_response(
         } else {
             std::string content(
                 (std::istreambuf_iterator<char>(file)),
-                std::istreambuf_iterator<char>()
-            );
+                std::istreambuf_iterator<char>());
             file.close();
             const int current_compression_level = compression_level;
             if (current_compression_level > Z_BEST_SPEED - 1) {
-                std::string compressed =
-                    deflate_compress(content, current_compression_level);
+                std::string compressed = deflate_compress(content, current_compression_level);
                 res.body() = compressed;
-                res.set(
-                    "X-Compression-Level",
-                    std::to_string(current_compression_level)
-                );
+                res.set("X-Compression-Level",
+                        std::to_string(current_compression_level));
                 res.set(http::field::content_encoding, "deflate");
             } else {
                 res.body() = content;
                 res.set(http::field::content_encoding, "raw");
             }
 
-            logger.log(
-                std::string("Compression level: ") +
-                std::to_string(current_compression_level) + '\n'
-            );
+            logger.log(std::string("Compression level: ") + std::to_string(current_compression_level) + '\n');
             std::string hash = sha1_hash_file(file_path);
             logger.log("Hash: " + hash + '\n');
 
@@ -64,22 +54,19 @@ http::response<http::string_body> transport_service::Server::handle_response(
                                  ) == std::string::npos) {
                 res.set(http::field::etag, hash);
             } else {
-                logger.log("Invalid ETag value generated: " + hash + '\n');
+                logger.log("Invalid ETag value generated: " + hash +
+                          '\n');
             }
         }
-    } else if (req.method() == http::verb::post) {
-        const std::string file_path = dec_rep_path + std::string(req.target());
-        get_file(
-            client_address, std::string(req.target()), dec_rep_path,
-            get_local_time(file_path)
-        );
-        logger.log("Get file: " + file_path + '\n');
+        } else if (req.method() == http::verb::post) {
+            const std::string file_path = dec_rep_path +
+            std::string(req.target());
+            get_file(client_address, std::string(req.target()), dec_rep_path, get_local_time(file_path));
+            logger.log("Get file: " + file_path + '\n');
     } else {
         res.result(http::status::bad_request);
         res.body() = "Invalid request";
-        logger.log(
-            "Invalid request: " + std::string(req.method_string()) + '\n'
-        );
+        logger.log("Invalid request: " + std::string(req.method_string())  + '\n');
     }
 
     logger.log(std::string("Sending response") + '\n');
@@ -87,12 +74,12 @@ http::response<http::string_body> transport_service::Server::handle_response(
     return res;
 }
 
-void transport_service::Server::do_session(tcp::socket &socket) const {
+void transport_service::Server::do_session(
+    tcp::socket &socket
+) const {
     try {
-        ssl::context &ctx =
-            Certificate_Singleton::get_instance().get_server_context();
-        const std::string client_address =
-            socket.remote_endpoint().address().to_string();
+        ssl::context &ctx = Certificate_Singleton::get_instance().get_server_context();
+        const std::string client_address = socket.remote_endpoint().address().to_string();
         beast::ssl_stream<beast::tcp_stream> stream(std::move(socket), ctx);
 
         stream.handshake(ssl::stream_base::server);
@@ -130,9 +117,10 @@ void transport_service::Server::do_session(tcp::socket &socket) const {
     }
 }
 
-void transport_service::Server::run() const {
-    try {
-        net::io_context ioc{thread_count};
+void transport_service::Server::inner_run() const {
+        try {
+            is_running = true;
+            net::io_context ioc{thread_count};
         std::vector<std::thread> v;
         for (auto i = thread_count - 1; i > 0; --i) {
             v.emplace_back([&ioc] { ioc.run(); });
@@ -148,18 +136,19 @@ void transport_service::Server::run() const {
         acceptor.bind(endpoint);
         acceptor.listen();
 
-        logger.log("Server is running on port " + port + '\n');
+        logger.log("Server is running on port " +  port + '\n');
 
-        for (;;) {
+        while (is_running) {
             logger.log("Waiting for a connection..." + '\n');
             tcp::socket socket{ioc};
             acceptor.accept(socket);
             logger.log("Handle response" + '\n');
             std::thread(
-                [this](tcp::socket m_socket) { do_session(m_socket); },
+                [this](tcp::socket m_socket) {
+                    do_session(m_socket);
+                },
                 std::move(socket)
-            )
-                .detach();
+            ).detach();
         }
     } catch (const std::exception &e) {
         logger.log("Error: " + std::string(e.what()) + '\n');
@@ -173,8 +162,7 @@ void transport_service::get_file(
     const unsigned long local_clock
 ) {
     try {
-        ssl::context &ctx =
-            Certificate_Singleton::get_instance().get_client_context();
+        ssl::context &ctx = Certificate_Singleton::get_instance().get_client_context();
         net::io_context ioc;
         tcp::resolver resolver(ioc);
         const auto results =
@@ -205,7 +193,7 @@ void transport_service::get_file(
         http::read(stream, buffer, res);
 
         if (res.result() == http::status::ok) {
-            std::ofstream out_file(file_path + file_name, std::ios::binary);
+            std::ofstream out_file(file_path +  file_name, std::ios::binary | std::ios::trunc);
             if (!out_file) {
                 std::cerr << "Failed to open file for writing: "
                           << file_path + file_name << std::endl;
@@ -214,13 +202,12 @@ void transport_service::get_file(
 
             std::string file_data = beast::buffers_to_string(res.body().data());
 
-            if (res.base().find(http::field::content_encoding) !=
-                    res.base().end() &&
+
+            if (res.base().find(http::field::content_encoding) != res.base().end() &&
                 res.base().at(http::field::content_encoding) == "deflate") {
                 file_data = deflate_decompress(file_data);
-            }
+                }
             out_file << file_data;
-            out_file.close();
             // out_file << beast::buffers_to_string(res.body().data());
             out_file.close();
             std::string etag = res.base().at(http::field::etag);
@@ -256,15 +243,12 @@ void transport_service::get_file(
     }
 }
 
-void transport_service::send_file(
-    const std::string &server_address,
-    const std::string &file_name,
-    const std::string &file_path,
-    const unsigned long local_clock
-) {
+void transport_service::send_file(const std::string &server_address,
+                                  const std::string &file_name,
+                                  const std::string &file_path,
+                                  const unsigned long local_clock) {
     try {
-        ssl::context &ctx =
-            Certificate_Singleton::get_instance().get_client_context();
+        ssl::context &ctx = Certificate_Singleton::get_instance().get_client_context();
         net::io_context ioc;
         tcp::resolver resolver(ioc);
         const auto results =
@@ -278,7 +262,7 @@ void transport_service::send_file(
                 static_cast<int>(::ERR_get_error()),
                 net::error::get_ssl_category()};
             throw beast::system_error{ec};
-        }
+            }
 
         beast::get_lowest_layer(stream).connect(results);
         stream.handshake(ssl::stream_base::client);
@@ -315,9 +299,9 @@ void transport_service::send_file(
     }
 }
 
-[[nodiscard]] std::string transport_service::sha1_hash_file(
-    const std::string &filename
-) {
+
+[[nodiscard]] std::string transport_service::sha1_hash_file(const std::string &filename) {
+#ifdef HASH
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
         return {};
@@ -341,16 +325,16 @@ void transport_service::send_file(
         oss << std::setw(8) << value;
     }
     return oss.str();
+#else
+    return "";
+#endif
 }
 
-[[nodiscard]] std::string transport_service::deflate_compress(
-    const std::string &data,
-    const int compression_level
-) {
+[[nodiscard]] std::string transport_service::deflate_compress(const std::string& data, const int compression_level) {
     z_stream zs{};
     deflateInit(&zs, compression_level);
 
-    zs.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data.data()));
+    zs.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(data.data()));
     zs.avail_in = data.size();
 
     int ret;
@@ -358,7 +342,7 @@ void transport_service::send_file(
     std::string out_string;
 
     do {
-        zs.next_out = reinterpret_cast<Bytef *>(out_buffer);
+        zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
         zs.avail_out = sizeof(out_buffer);
 
         ret = deflate(&zs, Z_FINISH);
@@ -372,13 +356,11 @@ void transport_service::send_file(
     return out_string;
 }
 
-[[nodiscard]] std::string transport_service::deflate_decompress(
-    const std::string &data
-) {
+[[nodiscard]] std::string transport_service::deflate_decompress(const std::string& data) {
     z_stream zs{};
     inflateInit(&zs);
 
-    zs.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data.data()));
+    zs.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(data.data()));
     zs.avail_in = data.size();
 
     int ret;
@@ -386,7 +368,7 @@ void transport_service::send_file(
     std::string out_string;
 
     do {
-        zs.next_out = reinterpret_cast<Bytef *>(out_buffer);
+        zs.next_out = reinterpret_cast<Bytef*>(out_buffer);
         zs.avail_out = sizeof(out_buffer);
 
         ret = inflate(&zs, 0);
