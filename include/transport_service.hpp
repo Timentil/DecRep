@@ -152,10 +152,19 @@ namespace transport_service {
             is_running = false;
         }
     private:
+        void inner_closer(tcp::acceptor &socket) const;
         void do_session(tcp::socket &socket) const;
     };
 
     // Функция для получения файла с сервера по указанному адресу и имени файла.
+    int get_file_inner(
+        const std::string &server_address,
+        const std::string &file_name,
+        const std::string &file_path,
+        unsigned long local_clock
+    );
+
+
     void get_file(
         const std::string &server_address,
         const std::string &file_name,
@@ -171,6 +180,13 @@ namespace transport_service {
     );
 
     // Функция для отправки файла на сервера по указанному адресу и имени файла.
+    void send_file_inner(
+        const std::string &server_address,
+        const std::string &file_name,
+        const std::string &file_path,
+        unsigned long local_clock
+    );
+
     void send_file(
         const std::string &server_address,
         const std::string &file_name,
