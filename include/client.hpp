@@ -26,7 +26,7 @@ private:
 public:
     HTTPClient(Events::EventHandler &handler_);
 
-    net::awaitable<void> do_session(
+    void do_session(
         const net::ip::address &address,
         int port,
         const std::string &target

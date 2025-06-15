@@ -35,10 +35,10 @@ public:
     HTTPServer(Events::EventHandler &handler_);
 
     // Handles an HTTP server connection
-    net::awaitable<void> do_session(beast::tcp_stream stream);
+    void do_session(beast::tcp_stream stream);
 
     // Accepts incoming connections and launches the sessions
-    net::awaitable<void> do_listen(const net::ip::tcp::endpoint &endpoint);
+    // net::awaitable<void> do_listen(const net::ip::tcp::endpoint &endpoint);
 };
 }; // namespace Server
 

@@ -147,12 +147,12 @@ void FileWatcher::handleFileAction(
         if (ev.type == FW_Event::Type::Deleted) {
             for (auto &oldp : ev.old_paths) {
                 std::vector<std::string_view> parts { "delete_local_file", oldp };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+                prop_.on_local_change(parts);
             }
         } else if (ev.type == FW_Event::Type::Modified) {
             for (auto &newp : ev.new_paths) {
                 std::vector<std::string_view> parts { "update_file", newp };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+                prop_.on_local_change(parts);
             }
         } else if (ev.type == FW_Event::Type::Moved) {
             for (size_t i = 0; i < ev.old_paths.size(); ++i) {
@@ -161,7 +161,7 @@ void FileWatcher::handleFileAction(
                     ev.old_paths[i],
                     ev.new_paths[i]
                 };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+            prop_.on_local_change(parts);
             }
         }
     });

@@ -106,6 +106,7 @@ void EventHandler::import_data(const std::string &json_str)
 bool EventHandler::add_file(const std::vector<std::string_view> &params) const
 {
     if (params.size() != 3) {
+        std::cerr << "Wrong commad args num" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -114,11 +115,14 @@ bool EventHandler::add_file(const std::vector<std::string_view> &params) const
     const std::string username(params[2]);
     const std::string file_name = get_name(local_file_path);
 
+    try {
     dbManager.add_file(
         local_file_path, file_name, DecRep_path, username
     );
     decRepFS.add_file(DecRep_path, file_name);
-
+    } catch (std::exception &e) {
+        std::cerr << "Problem with DB" << std::endl;
+    }
     return EXIT_SUCCESS;
 }
 
@@ -328,6 +332,9 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
         return res;
     };
 
+
+    std::cout << "cringe";
+
     // Make sure we can handle the method
     if (req.method() != http::verb::get) {
         return response(http::status::bad_request, "Unknown HTTP-method");
@@ -346,6 +353,8 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
     if (parts.size() > 2) {
         event_args.assign(parts.begin() + 1, parts.end());
     }
+
+    std::cout << "cringe";
 
     // Perfome an event
     // Сохраняется инвариант: отправили на другие устройства, значит данные корректны

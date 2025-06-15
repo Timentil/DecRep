@@ -1,4 +1,5 @@
 #include "change_propagator.hpp"
+#include "transport_service.hpp"
 
 #ifndef SERVER_LISTENER_PORT
 #define SERVER_LISTENER_PORT 1498
@@ -37,7 +38,7 @@ ChangePropagator::ChangePropagator(
 {
 }
 
-net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::string_view> &parts)
+void ChangePropagator::on_local_change(const std::vector<std::string_view> &parts)
 {
     std::string command_name(parts[0]);
     std::vector<std::string_view> command_args;
@@ -45,35 +46,46 @@ net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::st
         command_args.assign(parts.begin() + 1, parts.end());
     }
 
+    std::cout << "CRINGE" << std::endl;
+
     // Изменяем локально
     auto it = m_event_handler.func_map.find(command_name);
     if (it != m_event_handler.func_map.end()) {
         if (!it->second(command_args)) {
             std::cout << "Invalid args count:" << command_args.size() << '\n';
-            co_return;
+            return;
         }
     } else {
         std::cout << "Unknown command:" << command_name << '\n';
-        co_return;
+        return;
     }
 
-    // Получаем ip
-    std::set<address> users = m_search_service.get_app_endpoints();
+    std::cout << "CRINGE" << std::endl;
 
-    std::string target = join(parts, '/');
-    auto executor = co_await net::this_coro::executor; // TODO возможно не найдётся
+    // Получаем ip
+    // std::set<address> users;
+    std::set<address> users = m_search_service.get_app_endpoints();
+    // std::cout << users.size() << std::endl;
+    std::string target = join(parts, '/'); // TODO возможно не найдётся
+
+    if (command_name == "update_file") {
+        for (auto ip : users) {
+            std::string file = std::string(parts[1]);
+            transport_service::send_file(ip.to_string(), file.substr(1, file.size() - 2), "", 0);
+        }
+    }
+
+
+    std::cout << "CRINGE" << std::endl;
 
     // Пробрасываем всем request
     for (auto ip : users) {
-        net::co_spawn(
-            executor,
-            m_client.do_session(ip, SERVER_LISTENER_PORT, target),
-            [](std::exception_ptr e) {
-                if (e) {
-                    std::rethrow_exception(e);
-                }
-            }
-        );
+        // std::thread{
+        //     [this](boost::asio::ip::address ip_m, int port, std::string target_m)  {
+        //            m_client.do_session(ip_m, port, target_m);         
+        //     }, ip, SERVER_LISTENER_PORT, target
+        // }.detach();
+        m_client.do_session(ip, SERVER_LISTENER_PORT, target);
     }
 }
 
