@@ -1,6 +1,12 @@
 #ifndef FILEWATCHER_HPP
 #define FILEWATCHER_HPP
 
+inline bool FLAG = true;
+
+#ifdef _WIN32 || _WIN64
+FLAG = false;
+#endif
+
 #include "../include/change_propagator.hpp"
 #include <boost/asio.hpp>
 #include <efsw/efsw.hpp>
