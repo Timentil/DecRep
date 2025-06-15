@@ -167,6 +167,7 @@ void transport_service::Server::run() const {
 }
 
 void transport_service::get_file(
+void transport_service::get_file(
     const std::string &server_address,
     const std::string &file_name,
     const std::string &file_path,
@@ -209,6 +210,7 @@ void transport_service::get_file(
             if (!out_file) {
                 std::cerr << "Failed to open file for writing: "
                           << file_path + file_name << std::endl;
+                return;
                 return;
             }
 

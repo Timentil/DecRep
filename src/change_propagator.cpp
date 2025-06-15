@@ -78,6 +78,13 @@ void ChangePropagator::on_local_change(const std::vector<std::string_view> &part
 
     std::cout << "CRINGE" << std::endl;
 
+    if (command_name == "update_file") {
+        for (auto ip : users) {
+            std::string file = std::string(parts[1]);
+            transport_service::send_file(ip.to_string(), file.substr(1, file.size() - 2), "", 0);
+        }
+    }
+
     // Пробрасываем всем request
     for (auto ip : users) {
         // std::thread{
