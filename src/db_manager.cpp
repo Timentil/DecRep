@@ -228,8 +228,8 @@ std::string Manager::delete_local_file(
     int file_id = res[0]["file_id"].as<int>();
 
     w.exec_params(
-        "DELETE FROM FileOwners WHERE file_id = $1",
-        file_id
+        "DELETE FROM FileOwners WHERE file_id = $1 AND owner_id = $2",
+        file_id, owner_id
     );
 
     const pqxx::result res2 = w.exec_params(
@@ -413,25 +413,23 @@ std::vector<std::string> Manager::delete_user(
     int user_id = get_user_id(w, username);
 
     const pqxx::result deleted_files = w.exec_params(
-        "DELETE FROM FileOwners WHERE owner_id = $1 RETURNING file_id, DecRep_path",
+        "DELETE FROM FileOwners USING Files WHERE FileOwners.owner_id = $1 AND FileOwners.file_id = Files.id RETURNING FileOwners.file_id, Files.DecRep_path",
         user_id
     );
 
-    if (!deleted_files.empty()) {
-        for (const auto &file : deleted_files) {
-            int file_id = file["file_id"].as<int>();
+    for (const auto &row : deleted_files) {
+        int file_id = row["file_id"].as<int>();
 
-            const pqxx::result file_owners = w.exec_params(
-                "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
-                file_id
-            );
+        const pqxx::result file_owners = w.exec_params(
+            "SELECT COUNT(*) AS remain FROM FileOwners WHERE file_id = $1",
+            file_id
+        );
 
-            int owners_left = file_owners[0]["remain"].as<int>();
+        int owners_left = file_owners[0]["remain"].as<int>();
 
-            if (owners_left == 0) {
-                deleted.push_back(file["DecRep_path"].as<std::string>());
-                w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
-            }
+        if (owners_left == 0) {
+            deleted.push_back(row["DecRep_path"].as<std::string>());
+            w.exec_params("DELETE FROM Files WHERE id = $1", file_id);
         }
     }
 

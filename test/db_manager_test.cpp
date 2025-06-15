@@ -7,7 +7,7 @@
 
 // ВАЖНО: Перед запуском тестов убедитесь, что у вас есть
 // запущенный экземпляр PostgreSQL и создана тестовая база данных.
-const std::string TEST_DB_CONNECTION = "dbname=testdb user=testuser password=testpass hostaddr=127.0.0.1 port=5432";
+const std::string TEST_DB_CONNECTION = "dbname=mydb user=myuser password=mypassword hostaddr=127.0.0.1 port=5432";
 
 // Вспомогательная функция для создания временного файла
 void create_temp_file(const std::string &path, const std::string &content)
@@ -28,7 +28,7 @@ protected:
     void SetUp() override
     {
         // --- Шаг 1: Чтение SQL файла ---
-        std::ifstream sql_file("db_struct.sql");
+        std::ifstream sql_file("../db_struct.sql");
         if (!sql_file.is_open()) {
             // Если файл не найден, тест должен упасть с ошибкой.
             throw std::runtime_error("Не удалось открыть файл db_struct.sql. "
@@ -355,7 +355,7 @@ TEST_F(DBManagerTest, UpdateFile)
 
     // Проверяем размер файла
     pqxx::result r_size = w.exec("SELECT file_size FROM Files");
-    ASSERT_EQ(r_size[0][0].as<long>(), 25); // "updated and longer content"
+    ASSERT_EQ(r_size[0][0].as<long>(), 26); // "updated and longer content"
 
     // Проверяем, что user2 удален из владельцев
     pqxx::result r_owners = w.exec(
