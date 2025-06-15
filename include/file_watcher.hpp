@@ -3,7 +3,7 @@
 
 inline bool FLAG = true;
 
-#ifdef _WIN32 || _WIN64
+#if defined(_WIN32) || defined(_WIN64)
 FLAG = false;
 #endif
 
