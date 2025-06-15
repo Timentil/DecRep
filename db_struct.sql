@@ -1,7 +1,5 @@
 CREATE TABLE IF NOT EXISTS Users(
     id SERIAL PRIMARY KEY,
-    /*ip INET NOT NULL,*/
-    /*port INTEGER NOT NULL,*/
     username VARCHAR(255) NOT NULL UNIQUE,
     first_connection_time TIMESTAMP NOT NULL
 );
@@ -10,7 +8,6 @@ CREATE TABLE IF NOT EXISTS Files(
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(255) NOT NULL,
     file_size BIGINT NOT NULL,
-    /*file_hash VARCHAR(255) NOT NULL,*/
     addition_time TIMESTAMP NOT NULL,
     last_modified TIMESTAMP NOT NULL,
     DecRep_path VARCHAR(255) NOT NULL,
