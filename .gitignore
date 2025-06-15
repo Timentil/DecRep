@@ -1,0 +1,8 @@
+#certificates
+*.crt
+*.csr
+*.key
+*.pem
+
+#log files
+*.log
