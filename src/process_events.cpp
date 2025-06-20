@@ -179,7 +179,7 @@ bool EventHandler::change_DecRep_path(const std::vector<std::string_view> &param
     const std::string old_DecRep_path(params[1]);
     const std::string new_DecRep_path(params[2]);
 
-    dbManager.change_DecRep_path(file_name,old_DecRep_path, new_DecRep_path);
+    dbManager.change_DecRep_path(file_name, old_DecRep_path, new_DecRep_path);
     decRepFS.change_path(file_name, old_DecRep_path, new_DecRep_path);
 
     return EXIT_SUCCESS;
@@ -195,8 +195,9 @@ bool EventHandler::add_user(const std::vector<std::string_view> &params) const
     const std::string flag(params[1]);
     bool isLocal = false;
 
-    if (flag == "true")
+    if (flag == "true") {
         isLocal = true;
+    }
 
     dbManager.add_user(username, isLocal);
 
@@ -278,7 +279,7 @@ bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) c
 
     dbManager.untrack_folder(DecRep_path);
     decRepFS.delete_folder(DecRep_path);
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -309,8 +310,9 @@ bool EventHandler::delete_user(const std::vector<std::string_view> &params) cons
     const std::string username(params[0]);
 
     const std::vector<std::string> deleted_files = dbManager.delete_user(username);
-    if (!deleted_files.empty())
+    if (!deleted_files.empty()) {
         decRepFS.delete_user_files(deleted_files);
+    }
 
     return EXIT_SUCCESS;
 }

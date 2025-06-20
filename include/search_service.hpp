@@ -11,7 +11,8 @@ using namespace boost::asio::ip;
 
 namespace search_service {
 struct search_service {
-    enum run_state { RUN = 0, STOP = 1 };
+    enum run_state { RUN = 0,
+                     STOP = 1 };
 
     run_state state = RUN;
     std::mutex state_lock;
@@ -32,15 +33,16 @@ struct search_service {
 
     search_service(boost::asio::io_context &io_context, int listener_port);
     explicit search_service(boost::asio::io_context &io_context)
-        : search_service(io_context, LISTENER_PORT){};
+        : search_service(io_context, LISTENER_PORT) {};
     void run_listener();
     void run_speaker();
     void run_service();
     void stop_service();
 
-    [[nodiscard]] std::set<address> get_app_endpoints() const {
+    [[nodiscard]] std::set<address> get_app_endpoints() const
+    {
         return app_endpoints;
     }
 };
-}  // namespace search_service
-#endif  // SEARCH_SERVICE_HPP
+} // namespace search_service
+#endif // SEARCH_SERVICE_HPP

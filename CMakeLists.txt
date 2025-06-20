@@ -4,7 +4,7 @@ project(dec-rep CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# include(default-options.cmake)
+include(default-options.cmake)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden) 
 
@@ -16,18 +16,14 @@ find_package(PostgreSQL REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(GTest REQUIRED)
-
-# add from https://stackoverflow.com/questions/76869634/linker-fails-when-using-libpqxx-with-cmake
 find_package(PkgConfig REQUIRED)
-
 pkg_check_modules(PQXX REQUIRED libpqxx)
-# add from https://stackoverflow.com/questions/76869634/linker-fails-when-using-libpqxx-with-cmake
 
 include_directories(include)
 include_directories(test)
 
 add_executable(dec-rep 
-    src/transport_service.cpp
+    # src/transport_service.cpp
     src/file_watcher.cpp
     src/search_service.cpp
     src/change_propagator.cpp
@@ -55,3 +51,11 @@ add_executable(dec-rep-db_manager_test
 target_link_libraries(dec-rep-db_manager_test PRIVATE Boost::filesystem Boost::json ${PQXX_LINK_LIBRARIES} ${CMAKE_DL_LIBS})
 target_link_libraries(dec-rep-db_manager_test PRIVATE PostgreSQL::PostgreSQL)
 target_link_libraries(dec-rep-db_manager_test PRIVATE GTest::gtest GTest::gtest_main)
+
+
+add_executable(dec-rep-fs_test
+    src/dec_rep_fs.cpp
+    test/dec_rep_fs_test.cpp
+)
+
+target_link_libraries(dec-rep-fs_test PRIVATE GTest::gtest GTest::gtest_main ${CMAKE_DL_LIBS})

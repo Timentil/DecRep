@@ -33,7 +33,7 @@ net::awaitable<void> HTTPServer::do_session(beast::tcp_stream stream)
     stream.socket().shutdown(net::ip::tcp::socket::shutdown_send);
 }
 
-net::awaitable<void> HTTPServer::do_listen(const net::ip::tcp::endpoint &endpoint)
+net::awaitable<void> HTTPServer::do_listen(const net::ip::tcp::endpoint endpoint)
 {
     auto executor = co_await net::this_coro::executor;
     auto acceptor = net::ip::tcp::acceptor { executor, endpoint };

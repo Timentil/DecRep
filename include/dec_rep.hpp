@@ -1,14 +1,15 @@
 #ifndef DEC_REP_HPP_
 #define DEC_REP_HPP_
 
+#include "change_propagator.hpp"
 #include "client.hpp"
 #include "db_manager.hpp"
 #include "dec_rep_fs.hpp"
 #include "process_events.hpp"
-#include "server.hpp"
 #include "search_service.hpp"
-#include "change_propagator.hpp"
-#include "transport_service.hpp"
+#include "server.hpp"
+
+// #include "transport_service.hpp"
 
 // - connect to database
 // - run server
@@ -17,26 +18,31 @@
 // - run search_service
 class DecRep {
 public:
-    net::io_context m_ioc;
-    net::executor_work_guard<net::io_context::executor_type> m_work_guard;
-    std::jthread m_jthread;
+    net::io_context m_ioc_http;
+    net::io_context m_ioc_propagator;
+    net::io_context m_ioc_search_service;
+    net::executor_work_guard<net::io_context::executor_type> m_work_guard_http;
+    net::executor_work_guard<net::io_context::executor_type> m_work_guard_propagator;
+    net::executor_work_guard<net::io_context::executor_type> m_work_guard_search_service;
+    std::jthread m_jthread_http;
+    std::jthread m_jthread_propagator;
 
     DBManager::Manager m_db_manager;
     DecRepFS::FS m_dec_rep_fs;
     Events::EventHandler m_event_handler;
-    // Server::HTTPServer m_server;
+    Server::HTTPServer m_server;
     Client::HTTPClient m_client;
     search_service::search_service m_search_service;
     ChangePropagator::ChangePropagator m_propagator;
-    transport_service::Server m_server;
+    // transport_service::Server m_server_download;
 
-    DecRep(const std::string &address, int port, const std::string &connection_data);
+    DecRep(const std::string &connection_data);
 
     void start_server(const std::string &address, const int port);
 
     void construct_dec_rep_fs();
 
-    void run();
+    void run(const std::string &address, int port);
 
     void stop();
 

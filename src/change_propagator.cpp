@@ -37,7 +37,7 @@ ChangePropagator::ChangePropagator(
 {
 }
 
-net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::string_view> &parts)
+net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::string_view> parts)
 {
     std::string command_name(parts[0]);
     std::vector<std::string_view> command_args;
@@ -49,11 +49,13 @@ net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::st
     auto it = m_event_handler.func_map.find(command_name);
     if (it != m_event_handler.func_map.end()) {
         if (!it->second(command_args)) {
-            std::cout << "Invalid args count:" << command_args.size() << '\n';
+            std::cout << "Invalid args count: " << command_args.size() << '\n';
+            std::cout << "Enter your comands (or type 'help'):\n";
             co_return;
         }
     } else {
-        std::cout << "Unknown command:" << command_name << '\n';
+        std::cout << "Unknown command: " << command_name << '\n';
+        std::cout << "Enter your comands (or type 'help'):\n";
         co_return;
     }
 

@@ -7,7 +7,7 @@
 
 namespace ChangePropagator {
 
-std::string join(const std::vector<std::string_view>& parts, char delimiter);
+std::string join(const std::vector<std::string_view> &parts, char delimiter);
 
 class ChangePropagator {
 private:
@@ -24,7 +24,7 @@ public:
         int max_retries = 3
     );
 
-    net::awaitable<void> on_local_change(const std::vector<std::string_view> &);
+    net::awaitable<void> on_local_change(const std::vector<std::string_view>);
 };
 
 } // namespace ChangePropagator

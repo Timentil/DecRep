@@ -1,7 +1,6 @@
 #ifndef TRANSPORT_SERVICE_HPP
 #define TRANSPORT_SERVICE_HPP
 
-#include <zlib.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast.hpp>
@@ -10,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <utility>
+#include <zlib.h>
 
 #define SERVER_PORT 6061
 #define CLIENT_PORT 6062
@@ -34,7 +34,8 @@ private:
 
 public:
     explicit Server_Logger(std::string m_log_file_name = DEFAULT_LOG_FILE)
-        : log_file_name(std::move(m_log_file_name)) {
+        : log_file_name(std::move(m_log_file_name))
+    {
         log_file.open(log_file_name.c_str());
         if (!log_file) {
             is_open = false;
@@ -42,7 +43,8 @@ public:
         }
     }
 
-    void log(const std::string &message) const {
+    void log(const std::string &message) const
+    {
         if (log_file.is_open()) {
             log_file << message << std::endl;
         } else if (is_open) {
@@ -58,11 +60,11 @@ private:
     ssl::context client_context;
 
     Certificate_Singleton()
-        : server_context(ssl::context::sslv23_server),
-          client_context(ssl::context::sslv23_client) {
+        : server_context(ssl::context::sslv23_server)
+        , client_context(ssl::context::sslv23_client)
+    {
         server_context.set_options(
-            ssl::context::default_workarounds | ssl::context::no_sslv2 |
-            ssl::context::single_dh_use
+            ssl::context::default_workarounds | ssl::context::no_sslv2 | ssl::context::single_dh_use
         );
         server_context.use_certificate_chain_file("server.crt");
         server_context.use_private_key_file("server.key", ssl::context::pem);
@@ -73,16 +75,19 @@ public:
     Certificate_Singleton(const Certificate_Singleton &) = delete;
     Certificate_Singleton &operator=(const Certificate_Singleton &) = delete;
 
-    static Certificate_Singleton &get_instance() {
+    static Certificate_Singleton &get_instance()
+    {
         static Certificate_Singleton instance;
         return instance;
     }
 
-    [[nodiscard]] ssl::context &get_server_context() {
+    [[nodiscard]] ssl::context &get_server_context()
+    {
         return server_context;
     }
 
-    [[nodiscard]] ssl::context &get_client_context() {
+    [[nodiscard]] ssl::context &get_client_context()
+    {
         return client_context;
     }
 };
@@ -113,10 +118,11 @@ public:
         std::string m_dec_rep_path = DEC_REP_PATH,
         const std::string &m_log_file = DEFAULT_LOG_FILE
     )
-        : thread_count(m_thread_count),
-          port(m_port),
-          dec_rep_path(std::move(m_dec_rep_path)),
-          logger(m_log_file) {
+        : thread_count(m_thread_count)
+        , port(m_port)
+        , dec_rep_path(std::move(m_dec_rep_path))
+        , logger(m_log_file)
+    {
         // Сертификаты для сервера находятся в корневом репозитории.
         try {
             Certificate_Singleton::get_instance();
@@ -129,7 +135,8 @@ public:
         server_thread.detach();
     }
 
-    void set_compression_level(int level) {
+    void set_compression_level(int level)
+    {
         // 0 - без сжатия, 1 - максимальная скорость, 9 - максимальное сжатие
         if (Z_BEST_SPEED - 1 > level || level > Z_BEST_COMPRESSION) {
             throw std::invalid_argument("Invalid compression level");
@@ -137,7 +144,8 @@ public:
         compression_level = level;
     }
 
-    [[nodiscard]] int get_port() const {
+    [[nodiscard]] int get_port() const
+    {
         return port;
     }
 
@@ -176,8 +184,9 @@ void send_large_file(
     unsigned long local_clock
 );
 
-inline unsigned long long get_local_time(const std::string &file_name) {
-    return 0;  // TODO Надо походить в БД ручками.
+inline unsigned long long get_local_time(const std::string &file_name)
+{
+    return 0; // TODO Надо походить в БД ручками.
 }
 
 // Вычисление хеша для валидации файлов.
@@ -186,6 +195,6 @@ std::string sha1_hash_file(const std::string &filename);
 std::string deflate_compress(const std::string &data, int compression_level);
 // Функция для распаковки данных с использованием deflate в zlib.
 std::string deflate_decompress(const std::string &data);
-}  // namespace transport_service
+} // namespace transport_service
 
-#endif  // TRANSPORT_SERVICE_HPP
+#endif // TRANSPORT_SERVICE_HPP

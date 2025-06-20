@@ -461,15 +461,34 @@ std::vector<DbFileInfo> Manager::get_files_info()
     return files;
 }
 
-bool Manager::is_users_empty()
+std::string Manager::get_current_schema()
 {
-    pqxx::work w(C);
+    pqxx::nontransaction N(C);
+    pqxx::result R = N.exec("SELECT current_schema();");
 
-    pqxx::result result = w.exec(
-        "SELECT EXISTS (SELECT 1 FROM " + w.quote_name("users") + ")"
-    );
+    if (R.empty() || R[0][0].is_null()) {
+        // Не удалось получить текущую схему (пустой/NULL результат).
+        return "public";
+    }
 
-    return !result[0][0].as<bool>();
+    return R[0][0].as<std::string>();
+}
+
+bool Manager::tables_exists()
+{
+    std::string schema_name = get_current_schema();
+    std::string sql = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = " + C.quote(schema_name) + " AND table_name = 'users');";
+
+    pqxx::work W(C);
+    pqxx::result R = W.exec(sql);
+
+    if (R.empty() || R[0][0].is_null()) {
+        std::cerr << "Ошибка: Запрос table_exists вернул пустой или NULL результат." << std::endl;
+        return false;
+    }
+
+    bool exists = R[0][0].as<bool>();
+    return exists;
 }
 
 json::value Manager::fetch_table_data(const std::string &table_name)
@@ -545,6 +564,23 @@ void Manager::insert_into_FileOwners(
         "VALUES ($1, $2, $3)",
         owner_id, file_id, local_path
     );
+    w.commit();
+}
+
+void Manager::create_tables()
+{
+    pqxx::work w(C);
+    std::ifstream sql_file("../db_struct.sql");
+    if (!sql_file.is_open()) {
+        throw std::runtime_error("Не удалось открыть файл db_struct.sql. "
+                                 "Убедитесь, что он скопирован в директорию сборки.");
+    }
+
+    std::stringstream buffer;
+    buffer << sql_file.rdbuf();
+    const std::string sql_schema = buffer.str();
+    w.exec("DROP TABLE IF EXISTS FileOwners, Files, MyUsername, Users CASCADE;");
+    w.exec(sql_schema);
     w.commit();
 }
 

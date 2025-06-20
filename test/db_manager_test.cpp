@@ -385,12 +385,15 @@ TEST_F(DBManagerTest, GetFilesInfo)
     ASSERT_EQ(files[0].DecRep_path, "/docs");
 }
 
-// is_users_empty()
-TEST_F(DBManagerTest, IsUsersEmpty)
+// tables_exists()
+TEST_F(DBManagerTest, TablesExists)
 {
-    ASSERT_TRUE(manager->is_users_empty());
-    manager->add_user("test_user");
-    ASSERT_FALSE(manager->is_users_empty());
+    ASSERT_TRUE(manager->tables_exists());
+    pqxx::work w_temp(*C_check);
+    w_temp.exec("DROP TABLE FileOwners, Files, Users, MyUsername CASCADE;");
+    w_temp.commit();
+
+    ASSERT_FALSE(manager->tables_exists());
 }
 
 int main(int argc, char **argv)

@@ -11,16 +11,18 @@ search_service::search_service(
     const int listener_port
 )
     : listener_socket(
-          udp::socket(io_context, udp::endpoint(udp::v4(), listener_port))
-      ),
-      speaker_socket(udp::socket(io_context)),
-      io_context(io_context) {
+        udp::socket(io_context, udp::endpoint(udp::v4(), listener_port))
+    )
+    , speaker_socket(udp::socket(io_context))
+    , io_context(io_context)
+{
     listener_endpoint = udp::endpoint(address_v4::broadcast(), listener_port);
     speaker_socket.open(udp::v4());
     speaker_socket.set_option(udp::socket::broadcast(true));
 }
 
-void search_service::run_listener() {
+void search_service::run_listener()
+{
     run_state state_copy = RUN;
     try {
         while (state_copy == RUN) {
@@ -42,7 +44,7 @@ void search_service::run_listener() {
             }
         }
     } catch (boost::system::system_error &e
-    ) {  // TODO Попытка закрытия сокета внутри родительского потока
+    ) { // TODO Попытка закрытия сокета внутри родительского потока
         return;
     }
     while (!state_lock.try_lock()) {
@@ -52,7 +54,8 @@ void search_service::run_listener() {
     }
 }
 
-void search_service::run_speaker() {
+void search_service::run_speaker()
+{
     run_state state_copy = RUN;
     while (state_copy == RUN) {
         speaker_socket.send_to(
@@ -67,7 +70,8 @@ void search_service::run_speaker() {
     }
 }
 
-void search_service::run_service() {
+void search_service::run_service()
+{
     while (!state_lock.try_lock()) {
         state = RUN;
         state_lock.unlock();
@@ -79,7 +83,8 @@ void search_service::run_service() {
     speaker_thread.detach();
 }
 
-void search_service::stop_service() {
+void search_service::stop_service()
+{
     while (!state_lock.try_lock()) {
         state = STOP;
         state_lock.unlock();
@@ -99,4 +104,4 @@ void search_service::stop_service() {
         break;
     }
 }
-}  // namespace search_service
+} // namespace search_service

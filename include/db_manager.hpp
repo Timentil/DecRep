@@ -3,6 +3,7 @@
 
 #include <boost/json.hpp>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <string>
@@ -43,8 +44,8 @@ public:
     // Добавить пользователя. Если это новый пользователь "создаёт себя" (isLocal = true), также обновляется MyUsername
     // Иначе (isLocal = false) обновляется только общая таблица -- Users
     void add_user(
-    const std::string &username,
-    bool isLocal = false
+        const std::string &username,
+        bool isLocal = false
     );
 
     // пользователь добавляет файл в репозиторий
@@ -63,20 +64,20 @@ public:
     );
 
     void rename_DecRep_file(
-    const std::string &DecRep_path,
-    const std::string &old_file_name,
-    const std::string &new_file_name
+        const std::string &DecRep_path,
+        const std::string &old_file_name,
+        const std::string &new_file_name
     );
 
     void rename_DecRep_folder(
-    const std::string &old_DecRep_path_name,
-    const std::string &new_DecRep_path_name
+        const std::string &old_DecRep_path_name,
+        const std::string &new_DecRep_path_name
     );
 
     void change_DecRep_path(
-    const std::string &file_name,
-    const std::string &old_DecRep_path,
-    const std::string &new_DecRep_path
+        const std::string &file_name,
+        const std::string &old_DecRep_path,
+        const std::string &new_DecRep_path
     );
 
     void untrack_file(const std::string &full_DecRep_path);
@@ -123,7 +124,9 @@ public:
 
     std::vector<DbFileInfo> get_files_info();
 
-    bool is_users_empty(); // возвращает True, если нет юзеров
+    std::string get_current_schema();
+
+    bool tables_exists();
 
     json::value fetch_table_data(const std::string &table_name);
 
@@ -149,6 +152,7 @@ public:
         const std::string &local_path
     );
 
+    void create_tables();
 };
 } // namespace DBManager
 
