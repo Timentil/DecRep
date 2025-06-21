@@ -567,6 +567,17 @@ void Manager::insert_into_FileOwners(
     w.commit();
 }
 
+void Manager::insert_into_MyUsername(const std::string &user_name)
+{
+    pqxx::work w(C);
+    w.exec_params(
+        "INSERT INTO MyUsername (username) "
+        "VALUES ($1)",
+        user_name
+    );
+    w.commit();
+}
+
 void Manager::create_tables()
 {
     pqxx::work w(C);

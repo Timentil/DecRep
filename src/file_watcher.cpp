@@ -150,21 +150,45 @@ void FileWatcher::handleFileAction(
             for (auto &oldp : ev.old_paths) {
                 std::string command = "delete_local_file " + oldp;
                 // TODO without detached
-                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), [](std::exception_ptr e) {
+                    if (e) {
+                        try {
+                            std::rethrow_exception(e);
+                        } catch (std::exception const &e) {
+                            std::cerr << "Error: " << e.what() << std::endl;
+                        }
+                    }
+                });
             }
         } else if (ev.type == FW_Event::Type::Modified) {
             for (auto &newp : ev.new_paths) {
                 std::string command = "update_file " + newp;
-                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), [](std::exception_ptr e) {
+                    if (e) {
+                        try {
+                            std::rethrow_exception(e);
+                        } catch (std::exception const &e) {
+                            std::cerr << "Error: " << e.what() << std::endl;
+                        }
+                    }
+                });
             }
         } else if (ev.type == FW_Event::Type::Moved) {
             for (size_t i = 0; i < ev.old_paths.size(); ++i) {
                 std::stringstream ss;
                 ss << "update_local_path " << ev.old_paths[i] << ' ' << ev.new_paths[i];
                 std::string command = ss.str();
-                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), [](std::exception_ptr e) {
+                    if (e) {
+                        try {
+                            std::rethrow_exception(e);
+                        } catch (std::exception const &e) {
+                            std::cerr << "Error: " << e.what() << std::endl;
+                        }
+                    }
+                });
             }
         }
     });
 }
-} // namespace FileWatcher 
+} // namespace FileWatcher

@@ -46,4 +46,44 @@ net::awaitable<void> HTTPClient::do_session(
         throw boost::system::system_error(ec, "shutdown");
     }
 }
+
+void HTTPClient::do_session_sync(
+    const net::ip::address &address,
+    int port,
+    const std::string &target,
+    net::io_context &ioc
+)
+{
+    auto stream = beast::tcp_stream { ioc };
+    net::ip::tcp::endpoint e(address, port);
+
+    stream.connect(e);
+
+    // Send request
+    http::request<http::string_body> req { http::verb::get, target, 11 };
+    http::write(stream, req);
+
+    // Read response
+    beast::flat_buffer buffer;
+    http::response<http::string_body> res;
+    http::read(stream, buffer, res);
+
+    // Handle response
+    if (res.result() == http::status::accepted) {
+        handler.handle_response(std::move(res));
+    } else {
+        throw std::logic_error("[client]: response back without acception");
+    }
+
+    // Close connection
+    beast::error_code ec;
+    stream.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
+
+    // not_connected happens sometimes
+    // so don't bother reporting it.
+    //
+    if (ec && ec != beast::errc::not_connected) {
+        throw boost::system::system_error(ec, "shutdown");
+    }
+}
 } // namespace Client

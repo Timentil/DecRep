@@ -31,6 +31,13 @@ public:
         int port,
         const std::string &target
     );
+
+    void do_session_sync(
+        const net::ip::address &address,
+        int port,
+        const std::string &target,
+        net::io_context &ioc
+    );
 };
 } // namespace Client
 

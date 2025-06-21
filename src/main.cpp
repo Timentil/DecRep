@@ -39,23 +39,19 @@ int main(int argc, char *argv[])
                 std::cerr << "Incorrect command\n";
                 return EXIT_FAILURE;
             }
+
+            app.m_db_manager.create_tables();
+
             if (command == "connect") {
-                // std::string ip {}, port {};
-                // std::cout << "Enter host's ip address and port (Ex: 0.0.0.0 1234): ";
-                // std::cin >> ip >> port;
-                // net::co_spawn(
-                //     app.m_ioc,
-                //     app.m_client.do_session(ip, std::stoi(port), "events/get_db_data/" + user_name),
-                //     [](std::exception_ptr e) {
-                //         if (e) {
-                //             std::rethrow_exception(e);
-                //         }
-                //     }
-                // );
-                std::cout << "Sorry, we can't do this yet :("; // TODO
+                std::string ip {};
+                std::cout << "Enter host's ip address and port (Ex: 0.0.0.0): ";
+                std::cin >> ip;
+                app.m_client.do_session_sync(net::ip::make_address_v4(ip), SERVER_LISTENER_PORT, "events/connect/" + user_name, app.m_ioc_http);
+                std::cout << "CONNECTION ENDED\n";
+                app.m_db_manager.insert_into_MyUsername(user_name);
+                // std::cout << "Sorry, we can't do this yet :("; 
                 return EXIT_FAILURE;
             } else {
-                app.m_db_manager.create_tables();
                 app.m_db_manager.add_user(user_name, true);
             }
         }

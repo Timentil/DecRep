@@ -107,6 +107,14 @@ net::awaitable<void> ChangePropagator::on_local_change(std::string command)
     for (auto el : users) {
         std::cout << el.to_string() << '\n';
     }
+    if (users.empty()) {
+        std::cout << "SEARCH_SERVICE: EMPTY\n";
+    } else {
+        std::cout << "SEARCH_SERVICE HAS " << users.size() << " users:\n";
+        for (auto el : users) {
+            std::cout << el.to_string() << '\n';
+        }
+    }
 
     std::string target = join(parts, '/');
     auto executor = co_await net::this_coro::executor;

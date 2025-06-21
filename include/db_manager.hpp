@@ -152,6 +152,8 @@ public:
         const std::string &local_path
     );
 
+    void insert_into_MyUsername(const std::string &user_name);
+
     void create_tables();
 };
 } // namespace DBManager

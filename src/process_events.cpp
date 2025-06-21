@@ -321,7 +321,7 @@ bool EventHandler::delete_user(const std::vector<std::string> &params) const
     return true;
 }
 
-http::message_generator EventHandler::handle_request(http::request<http::string_body> &&req)
+http::message_generator EventHandler::handle_request(http::request<http::string_body> req)
 {
     // Returns a simple response
     const auto response = [&req](http::status status, std::string_view msg = "") {
@@ -352,20 +352,24 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
 
     std::vector<std::string> event_args;
     if (parts.size() > 2) {
-        event_args.assign(parts.begin() + 1, parts.end());
+        event_args.assign(parts.begin() + 2, parts.end());
     }
 
-    // Perfome an event
-    // Сохраняется инвариант: отправили на другие устройства, значит данные корректны
-    func_map[event_name](event_args);
-
-    return response(http::status::accepted);
+    if (event_name != "connect") {
+        func_map[event_name](event_args);
+        return response(http::status::accepted);
+    } else {
+        json::object data = dbManager.get_all_data();
+        std::string new_user_name(parts[2]);
+        dbManager.add_user(new_user_name);
+        return response(http::status::accepted, boost::json::serialize(data));
+    }
 }
 
-void EventHandler::handle_response(http::response<http::string_body> &&res)
+void EventHandler::handle_response(http::response<http::string_body> res)
 {
-    if (res.result() != http::status::accepted) {
-        std::cout << res.body() << '\n';
+    if (!res.body().empty()) {
+        import_data(res.body());
     }
 }
 

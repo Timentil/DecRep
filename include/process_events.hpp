@@ -47,8 +47,8 @@ public:
     bool delete_local_file(const std::vector<std::string> &) const;
     bool delete_user(const std::vector<std::string> &) const;
 
-    http::message_generator handle_request(http::request<http::string_body> &&req);
-    void handle_response(http::response<http::string_body> &&res);
+    http::message_generator handle_request(http::request<http::string_body> req);
+    void handle_response(http::response<http::string_body> res);
 };
 } // namespace Events
 
