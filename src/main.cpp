@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             } else {
                 app.m_db_manager.create_tables();
+                app.m_db_manager.add_user(user_name, true);
             }
         }
 
@@ -67,6 +68,9 @@ int main(int argc, char *argv[])
             std::getline(std::cin, line);
             if (line == "exit") {
                 break;
+            } else if (line == "print") {
+                app.m_dec_rep_fs.print_DecRepFS();
+                continue;
             }
             net::co_spawn(
                 app.m_ioc_propagator, app.m_propagator.on_local_change(std::move(line)),

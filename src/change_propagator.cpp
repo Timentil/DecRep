@@ -104,9 +104,12 @@ net::awaitable<void> ChangePropagator::on_local_change(std::string command)
 
     // Получаем ip
     std::set<address> users = m_search_service.get_app_endpoints();
+    for (auto el : users) {
+        std::cout << el.to_string() << '\n';
+    }
 
     std::string target = join(parts, '/');
-    auto executor = co_await net::this_coro::executor; // TODO возможно не найдётся
+    auto executor = co_await net::this_coro::executor;
 
     // Пробрасываем всем request
     for (auto ip : users) {
