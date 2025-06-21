@@ -43,6 +43,7 @@ public:
     void run() const;
 
     void addWatch(const std::string &path);
+    void removeWatch(const std::string &path);
 
     // главный метод
     void handleFileAction(
