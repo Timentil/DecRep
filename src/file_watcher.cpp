@@ -1,6 +1,8 @@
 #include "file_watcher.hpp"
 #include <boost/asio/post.hpp>
 
+namespace FileWatcher {
+
 FileWatcher::FileWatcher(ChangePropagator::ChangePropagator &prop, boost::asio::io_context &io, EventCallback cb)
     : prop_(prop)
     , io_(io)
@@ -165,3 +167,4 @@ void FileWatcher::handleFileAction(
         }
     });
 }
+} // namespace FileWatcher 

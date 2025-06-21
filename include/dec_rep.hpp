@@ -8,6 +8,7 @@
 #include "process_events.hpp"
 #include "search_service.hpp"
 #include "server.hpp"
+#include "file_watcher.hpp"
 
 // #include "transport_service.hpp"
 
@@ -21,11 +22,14 @@ public:
     net::io_context m_ioc_http;
     net::io_context m_ioc_propagator;
     net::io_context m_ioc_search_service;
+    net::io_context m_ioc_file_watcher;
     net::executor_work_guard<net::io_context::executor_type> m_work_guard_http;
     net::executor_work_guard<net::io_context::executor_type> m_work_guard_propagator;
     net::executor_work_guard<net::io_context::executor_type> m_work_guard_search_service;
+    net::executor_work_guard<net::io_context::executor_type> m_work_guard_file_watcher;
     std::jthread m_jthread_http;
     std::jthread m_jthread_propagator;
+    std::jthread m_jthread_file_watcher;
 
     DBManager::Manager m_db_manager;
     DecRepFS::FS m_dec_rep_fs;
@@ -34,6 +38,7 @@ public:
     Client::HTTPClient m_client;
     search_service::search_service m_search_service;
     ChangePropagator::ChangePropagator m_propagator;
+    FileWatcher::FileWatcher m_file_watcher;
     // transport_service::Server m_server_download;
 
     DecRep(const std::string &connection_data);

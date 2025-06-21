@@ -1,7 +1,7 @@
 #ifndef FILEWATCHER_HPP
 #define FILEWATCHER_HPP
 
-#include "../include/change_propagator.hpp"
+#include "change_propagator.hpp"
 #include <boost/asio.hpp>
 #include <efsw/efsw.hpp>
 #include <filesystem>
@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+
+namespace FileWatcher {
 
 struct FW_Event {
     enum class Type { Added,
@@ -22,28 +24,28 @@ struct FW_Event {
 
 class FileWatcher final : public efsw::FileWatchListener {
     using EventCallback = std::function<void(const FW_Event &)>;
-
+    
 private:
-    static FW_Event::Type to_Event(efsw::Action action);
+static FW_Event::Type to_Event(efsw::Action action);
 
     ChangePropagator::ChangePropagator &prop_;
 
-    boost::asio::io_context &io_;
+    net::io_context &io_;
     EventCallback callback_;
     std::unique_ptr<efsw::FileWatcher> watcher_;
 
     std::unordered_set<std::string> watched_files; // файлы, за которыми следим
     std::unordered_set<std::string> watched_dirs; // директории с watch
 
-public:
+    public:
     FileWatcher(ChangePropagator::ChangePropagator &prop, boost::asio::io_context &io, EventCallback cb);
     ~FileWatcher() override;
-
+    
     // блокирующий
     void run() const;
-
+    
     void addWatch(const std::string &path);
-
+    
     // главный метод
     void handleFileAction(
         efsw::WatchID watch_id,
@@ -53,5 +55,6 @@ public:
         std::string oldFilename
     ) override;
 };
+} // namespace FileWatcher
 
 #endif // FILEWATCHER_HPP
