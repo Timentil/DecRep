@@ -8,7 +8,33 @@ using namespace boost::asio::ip;
 
 namespace ChangePropagator {
 
-std::string join(const std::vector<std::string_view> &parts, char delimiter)
+static const std::string HELP_MESSAGE = R"(
+    Command Reference:
+
+    add_file <local_file_path> <decrep_path> <username>
+        Adds a file to be tracked.
+
+    add_folder <local_folder_path> <decrep_path> <username>
+        Adds a folder and its contents to be tracked.
+
+    change_DecRep_path <file_name> <old_DecRep_path> <new_DecRep_path>
+        move file in DecRep file system
+
+    rename_DecRep_folder <old_DecRep_path_name> <new_old_DecRep_path_name>
+
+    rename_DecRep_file <DecRep_path> <old_file_name> <new_file_name>
+
+    untrack_file <full_decrep_path>
+        Stops tracking a file entirely from the repository.
+
+    untrack_folder <decrep_path>
+        Stops tracking a folder entirely from the repository.
+
+    delete_local_file <local_file_path> <username>
+        Stops tracking a local file for a specific user.
+    )";
+
+std::string join(const std::vector<std::string> &parts, char delimiter)
 {
     if (parts.empty()) {
         return "";
@@ -37,10 +63,24 @@ ChangePropagator::ChangePropagator(
 {
 }
 
-net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::string_view> parts)
+net::awaitable<void> ChangePropagator::on_local_change(std::string command)
 {
+    // Обрабатываем строку
+    std::vector<std::string> parts = Events::split_str(command, ' ');
+    if (parts.empty()) {
+        std::cout << "There's no command\n"
+                  << "Enter your comands (or type 'help'):\n";
+        co_return;
+    }
+
     std::string command_name(parts[0]);
-    std::vector<std::string_view> command_args;
+    if (command_name == "help") {
+        std::cout << HELP_MESSAGE << '\n'
+                  << "Enter your comands (or type 'help'):\n";
+        co_return;
+    }
+
+    std::vector<std::string> command_args;
     if (parts.size() > 1) {
         command_args.assign(parts.begin() + 1, parts.end());
     }
@@ -49,13 +89,16 @@ net::awaitable<void> ChangePropagator::on_local_change(const std::vector<std::st
     auto it = m_event_handler.func_map.find(command_name);
     if (it != m_event_handler.func_map.end()) {
         if (!it->second(command_args)) {
-            std::cout << "Invalid args count: " << command_args.size() << '\n';
-            std::cout << "Enter your comands (or type 'help'):\n";
+            std::cout << "Invalid args count: " << command_args.size() << '\n'
+                      << "Enter your comands (or type 'help'):\n";
+            co_return;
+        } else {
+            std::cout << "Command \"" << command_name << "\" successfuly ended\n";
             co_return;
         }
     } else {
-        std::cout << "Unknown command: " << command_name << '\n';
-        std::cout << "Enter your comands (or type 'help'):\n";
+        std::cout << "Unknown command: " << command_name << '\n'
+                  << "Enter your comands (or type 'help'):\n";
         co_return;
     }
 

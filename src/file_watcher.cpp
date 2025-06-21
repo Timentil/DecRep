@@ -146,22 +146,21 @@ void FileWatcher::handleFileAction(
     boost::asio::post(io_, [this, ev = std::move(event)]() mutable {
         if (ev.type == FW_Event::Type::Deleted) {
             for (auto &oldp : ev.old_paths) {
-                std::vector<std::string_view> parts { "delete_local_file", oldp };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+                std::string command = "delete_local_file " + oldp;
+                // TODO without detached
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
             }
         } else if (ev.type == FW_Event::Type::Modified) {
             for (auto &newp : ev.new_paths) {
-                std::vector<std::string_view> parts { "update_file", newp };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+                std::string command = "update_file " + newp;
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
             }
         } else if (ev.type == FW_Event::Type::Moved) {
             for (size_t i = 0; i < ev.old_paths.size(); ++i) {
-                std::vector<std::string_view> parts {
-                    "update_local_path",
-                    ev.old_paths[i],
-                    ev.new_paths[i]
-                };
-                boost::asio::co_spawn(io_, prop_.on_local_change(parts), boost::asio::detached);
+                std::stringstream ss;
+                ss << "update_local_path " << ev.old_paths[i] << ' ' << ev.new_paths[i];
+                std::string command = ss.str();
+                net::co_spawn(io_, prop_.on_local_change(std::move(command)), net::detached);
             }
         }
     });

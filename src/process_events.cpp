@@ -13,22 +13,26 @@ std::string get_name(const std::string &full_path)
     return p.filename().string();
 }
 
-std::vector<std::string_view> split_str(std::string_view str, char delimiter)
+// TODO very bad func
+std::vector<std::string> split_str(std::string_view str, char delimiter)
 {
-    std::vector<std::string_view> result;
+    std::vector<std::string> result;
+
     while (true) {
         size_t pos_delim = str.find(delimiter);
         size_t pos_quote = str.find('\"');
+
         if (pos_quote < pos_delim) {
             str.remove_prefix(pos_quote + 1);
             pos_quote = str.find('\"');
-            result.push_back(str.substr(0, pos_quote));
+            result.push_back(std::string(str.substr(0, pos_quote)));
             str.remove_prefix(pos_quote + 1);
             continue;
         }
 
-        if (str.substr(0, pos_delim) != "") {
-            result.push_back(str.substr(0, pos_delim));
+        std::string_view token = str.substr(0, pos_delim);
+        if (!token.empty()) {
+            result.push_back(std::string(token));
         }
 
         if (pos_delim == str.npos) {
@@ -103,10 +107,10 @@ void EventHandler::import_data(const std::string &json_str)
     }
 }
 
-bool EventHandler::add_file(const std::vector<std::string_view> &params) const
+bool EventHandler::add_file(const std::vector<std::string> &params) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string local_file_path(params[0]);
@@ -119,13 +123,13 @@ bool EventHandler::add_file(const std::vector<std::string_view> &params) const
     );
     decRepFS.add_file(DecRep_path, file_name);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::add_folder(const std::vector<std::string_view> &params) const
+bool EventHandler::add_folder(const std::vector<std::string> &params) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string local_folder_path(params[0]);
@@ -135,13 +139,13 @@ bool EventHandler::add_folder(const std::vector<std::string_view> &params) const
     dbManager.add_folder(local_folder_path, DecRep_path, username);
     decRepFS.add_folder(DecRep_path, local_folder_path);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::rename_DecRep_file(const std::vector<std::string_view> &params) const
+bool EventHandler::rename_DecRep_file(const std::vector<std::string> &params) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string DecRep_path(params[0]);
@@ -151,13 +155,13 @@ bool EventHandler::rename_DecRep_file(const std::vector<std::string_view> &param
     dbManager.rename_DecRep_file(DecRep_path, old_file_name, new_file_name);
     decRepFS.rename_file(DecRep_path, old_file_name, new_file_name);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::rename_DecRep_folder(const std::vector<std::string_view> &params) const
+bool EventHandler::rename_DecRep_folder(const std::vector<std::string> &params) const
 {
     if (params.size() != 2) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string old_DecRep_path_name(params[0]);
@@ -166,13 +170,13 @@ bool EventHandler::rename_DecRep_folder(const std::vector<std::string_view> &par
     dbManager.rename_DecRep_folder(old_DecRep_path_name, new_old_DecRep_path_name);
     decRepFS.rename_folder(old_DecRep_path_name, new_old_DecRep_path_name);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::change_DecRep_path(const std::vector<std::string_view> &params) const
+bool EventHandler::change_DecRep_path(const std::vector<std::string> &params) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string file_name(params[0]);
@@ -182,13 +186,13 @@ bool EventHandler::change_DecRep_path(const std::vector<std::string_view> &param
     dbManager.change_DecRep_path(file_name, old_DecRep_path, new_DecRep_path);
     decRepFS.change_path(file_name, old_DecRep_path, new_DecRep_path);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::add_user(const std::vector<std::string_view> &params) const
+bool EventHandler::add_user(const std::vector<std::string> &params) const
 {
     if (params.size() != 2) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string username(params[0]);
@@ -201,13 +205,13 @@ bool EventHandler::add_user(const std::vector<std::string_view> &params) const
 
     dbManager.add_user(username, isLocal);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::update_file(const std::vector<std::string_view> &params) const
+bool EventHandler::update_file(const std::vector<std::string> &params) const
 {
     if (params.size() != 2) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string local_path(params[0]);
@@ -215,14 +219,14 @@ bool EventHandler::update_file(const std::vector<std::string_view> &params) cons
 
     dbManager.update_file(local_path, username);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::update_local_file_path(const std::vector<std::string_view> &params
+bool EventHandler::update_local_file_path(const std::vector<std::string> &params
 ) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string old_local_path(params[0]);
@@ -233,14 +237,14 @@ bool EventHandler::update_local_file_path(const std::vector<std::string_view> &p
         old_local_path, new_local_path, username
     );
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::update_local_folder_path(const std::vector<std::string_view> &params
+bool EventHandler::update_local_folder_path(const std::vector<std::string> &params
 ) const
 {
     if (params.size() != 3) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     // TODO: FIX
@@ -252,13 +256,13 @@ bool EventHandler::update_local_folder_path(const std::vector<std::string_view> 
         old_local_paths, new_local_paths, username
     );
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::untrack_file(const std::vector<std::string_view> &params) const
+bool EventHandler::untrack_file(const std::vector<std::string> &params) const
 {
     if (params.size() != 1) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string full_DecRep_path(params[0]);
@@ -266,13 +270,13 @@ bool EventHandler::untrack_file(const std::vector<std::string_view> &params) con
     dbManager.untrack_file(full_DecRep_path);
     decRepFS.delete_file(full_DecRep_path);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) const
+bool EventHandler::untrack_folder(const std::vector<std::string> &params) const
 {
     if (params.size() != 1) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string DecRep_path(params[0]);
@@ -280,14 +284,14 @@ bool EventHandler::untrack_folder(const std::vector<std::string_view> &params) c
     dbManager.untrack_folder(DecRep_path);
     decRepFS.delete_folder(DecRep_path);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
+bool EventHandler::delete_local_file(const std::vector<std::string> &params
 ) const
 {
     if (params.size() != 2) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string local_path(params[0]);
@@ -298,13 +302,13 @@ bool EventHandler::delete_local_file(const std::vector<std::string_view> &params
         decRepFS.delete_file(delete_res);
     }
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
-bool EventHandler::delete_user(const std::vector<std::string_view> &params) const
+bool EventHandler::delete_user(const std::vector<std::string> &params) const
 {
     if (params.size() != 1) {
-        return EXIT_FAILURE;
+        return false;
     }
 
     const std::string username(params[0]);
@@ -314,7 +318,7 @@ bool EventHandler::delete_user(const std::vector<std::string_view> &params) cons
         decRepFS.delete_user_files(deleted_files);
     }
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
 http::message_generator EventHandler::handle_request(http::request<http::string_body> &&req)
@@ -335,7 +339,9 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
         return response(http::status::bad_request, "Unknown HTTP-method");
     }
 
-    std::vector<std::string_view> parts = split_str(req.target(), '/');
+    // req.target() - временный объект, поэтому его нужно сохранить
+    std::string target(std::move(req.target()));
+    std::vector<std::string> parts = split_str(target, '/');
     std::string namespace_name(parts[0]);
     std::string event_name(parts[1]);
 
@@ -344,7 +350,7 @@ http::message_generator EventHandler::handle_request(http::request<http::string_
         return response(http::status::bad_request, "Unknown namespace_name");
     }
 
-    std::vector<std::string_view> event_args;
+    std::vector<std::string> event_args;
     if (parts.size() > 2) {
         event_args.assign(parts.begin() + 1, parts.end());
     }
