@@ -2,6 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "dec-rep",
   "version-string": "0.1.0",
+  "builtin-baseline": "0cf34c184ce990471435b5b9c92edcf7424930b1",
   "dependencies": [
     "boost-filesystem",
     "boost-json",
