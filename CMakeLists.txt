@@ -9,15 +9,13 @@ include(default-options.cmake)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden) 
 
 
-find_package(Boost 1.87 REQUIRED filesystem json)
-list(APPEND CMAKE_PREFIX_PATH "/home/likurinist/C++Progect/efsw")
-find_package(efsw REQUIRED)
-find_package(PostgreSQL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem json)
+find_package(efsw CONFIG REQUIRED)
+find_package(PostgreSQL REQUIRED) # Находит libpq
+find_package(libpqxx CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(GTest REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PQXX REQUIRED libpqxx)
+find_package(GTest CONFIG REQUIRED)
 
 include_directories(include)
 include_directories(test)
@@ -37,7 +35,7 @@ add_executable(dec-rep
     src/dec_rep_fs.cpp
 )
 
-
+# возможно нужно использовать libpqxx::pqxx
 target_link_libraries(dec-rep PRIVATE Boost::filesystem Boost::json ${PQXX_LINK_LIBRARIES} ${CMAKE_DL_LIBS})
 target_link_libraries(dec-rep PRIVATE efsw::efsw PostgreSQL::PostgreSQL)
 target_link_libraries(dec-rep PRIVATE OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB)
