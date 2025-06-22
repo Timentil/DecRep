@@ -33,13 +33,13 @@ public:
 
     DBManager::Manager m_db_manager;
     DecRepFS::FS m_dec_rep_fs;
+    transport_service::Server m_transport_service;
     Events::EventHandler m_event_handler;
     Server::HTTPServer m_server;
     Client::HTTPClient m_client;
     search_service::search_service m_search_service;
     ChangePropagator::ChangePropagator m_propagator;
     FileWatcher::FileWatcher m_file_watcher;
-    transport_service::Server m_server_download;
 
     DecRep(const std::string &connection_data);
 

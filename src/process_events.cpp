@@ -45,9 +45,10 @@ std::vector<std::string> split_str(std::string_view str, char delimiter)
     return result;
 }
 
-EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs)
+EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs, transport_service::Server &ts)
     : dbManager(db)
     , decRepFS(fs)
+    , transportService(ts)
 {
     func_map = {
         { "add_file", [this](const auto &params) { return this->add_file(params); } },
@@ -60,7 +61,8 @@ EventHandler::EventHandler(DBManager::Manager &db, DecRepFS::FS &fs)
         { "update_local_folder_path", [this](const auto &params) { return this->update_local_folder_path(params); } },
         { "untrack_file", [this](const auto &params) { return this->untrack_file(params); } },
         { "untrack_folder", [this](const auto &params) { return this->untrack_folder(params); } },
-        { "delete_local_file", [this](const auto &params) { return this->delete_local_file(params); } }
+        { "delete_local_file", [this](const auto &params) { return this->delete_local_file(params); }},
+        { "get_file", [this](const auto &params) { return this->get_file(params); }}
     };
 };
 
@@ -76,33 +78,33 @@ void EventHandler::import_data(const std::string &json_str)
 
     // Users
     for (const auto &user_val : root["users"].as_array()) {
-        json::object user = user_val.as_object();
+        json::array user = user_val.as_array();
         dbManager.insert_into_Users(
-            user["username"].as_string().c_str(),
-            user["first_connection_time"].as_string().c_str()
+            user[0].as_string().c_str(),
+            user[1].as_string().c_str()
         );
     }
 
     // Files
     for (const auto &file_val : root["files"].as_array()) {
-        json::object file = file_val.as_object();
+        json::array file = file_val.as_array();
         dbManager.insert_into_Files(
-            file["file_name"].as_string().c_str(),
-            file["file_size"].as_string().c_str(),
-            file["addition_time"].as_string().c_str(),
-            file["last_modified"].as_string().c_str(),
-            file["DecRep_path"].as_string().c_str(),
-            file["author_id"].as_string().c_str()
+            file[0].as_string().c_str(),
+            file[1].as_string().c_str(),
+            file[2].as_string().c_str(),
+            file[3].as_string().c_str(),
+            file[4].as_string().c_str(),
+            file[5].as_string().c_str()
         );
     }
 
     // FileOwners
     for (const auto &fo_val : root["file_owners"].as_array()) {
-        json::object fo = fo_val.as_object();
+        json::array fo = fo_val.as_array();
         dbManager.insert_into_FileOwners(
-            fo["owner_id"].as_string().c_str(),
-            fo["file_id"].as_string().c_str(),
-            fo["local_path"].as_string().c_str()
+            fo[0].as_string().c_str(),
+            fo[1].as_string().c_str(),
+            fo[2].as_string().c_str()
         );
     }
 }
@@ -317,6 +319,20 @@ bool EventHandler::delete_user(const std::vector<std::string> &params) const
     if (!deleted_files.empty()) {
         decRepFS.delete_user_files(deleted_files);
     }
+
+    return true;
+}
+
+bool EventHandler::get_file(const std::vector<std::string> &params) const
+{
+    if (params.size() != 3) {
+        return false;
+    }
+
+    const std::string address(params[0]);
+    const std::string file_name(params[1]);
+    const std::string dir_path(params[2]);
+    transport_service::get_file(address, file_name, dir_path, 0);
 
     return true;
 }

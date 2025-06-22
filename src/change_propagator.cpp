@@ -16,7 +16,10 @@ static const std::string HELP_MESSAGE = R"(
         
     delete_local_file <local_file_path> <username>
         Stops tracking a local file for a specific user.
-        
+
+    get_file <other_ip> <file_name> <dir_path> <ver>
+        download file in current dir
+
     add_folder <local_folder_path> <decrep_path> <username>
         Adds a folder and its contents to be tracked.
 

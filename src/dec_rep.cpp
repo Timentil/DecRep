@@ -81,13 +81,13 @@ DecRep::DecRep(const std::string &connection_data)
     , m_work_guard_file_watcher(net::make_work_guard(m_ioc_file_watcher))
     , m_db_manager(connection_data)
     , m_dec_rep_fs()
-    , m_event_handler(m_db_manager, m_dec_rep_fs)
+    , m_transport_service()
+    , m_event_handler(m_db_manager, m_dec_rep_fs, m_transport_service)
     , m_server(m_event_handler)
     , m_client(m_event_handler)
     , m_search_service(m_ioc_search_service)
     , m_propagator(m_event_handler, m_client, m_search_service)
     , m_file_watcher(m_propagator, m_ioc_file_watcher, printEvent)
-    , m_server_download()
 {
 }
 

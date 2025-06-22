@@ -3,6 +3,7 @@
 
 #include "db_manager.hpp"
 #include "dec_rep_fs.hpp"
+#include "transport_service.hpp"
 #include <boost/beast/http.hpp>
 #include <boost/json.hpp>
 #include <functional>
@@ -24,11 +25,12 @@ class EventHandler {
 private:
     DBManager::Manager &dbManager;
     DecRepFS::FS &decRepFS;
+    transport_service::Server &transportService;
 
 public:
     std::unordered_map<std::string, CommandHandler> func_map;
 
-    EventHandler(DBManager::Manager &db, DecRepFS::FS &fs);
+    EventHandler(DBManager::Manager &db, DecRepFS::FS &fs,transport_service::Server &ts);
 
     std::string get_db_data();
     void import_data(const std::string &json_str);
@@ -46,6 +48,7 @@ public:
     bool untrack_folder(const std::vector<std::string> &) const;
     bool delete_local_file(const std::vector<std::string> &) const;
     bool delete_user(const std::vector<std::string> &) const;
+    bool get_file(const std::vector<std::string> &) const;
 
     http::message_generator handle_request(http::request<http::string_body> req);
     void handle_response(http::response<http::string_body> res);
