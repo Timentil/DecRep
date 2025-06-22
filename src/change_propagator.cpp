@@ -13,7 +13,10 @@ static const std::string HELP_MESSAGE = R"(
 
     add_file <local_file_path> <decrep_path> <username>
         Adds a file to be tracked.
-
+        
+    delete_local_file <local_file_path> <username>
+        Stops tracking a local file for a specific user.
+        
     add_folder <local_folder_path> <decrep_path> <username>
         Adds a folder and its contents to be tracked.
 
@@ -30,8 +33,6 @@ static const std::string HELP_MESSAGE = R"(
     untrack_folder <decrep_path>
         Stops tracking a folder entirely from the repository.
 
-    delete_local_file <local_file_path> <username>
-        Stops tracking a local file for a specific user.
     )";
 
 std::string join(const std::vector<std::string> &parts, char delimiter)

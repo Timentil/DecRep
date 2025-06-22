@@ -10,7 +10,7 @@
 #include "server.hpp"
 #include "file_watcher.hpp"
 
-// #include "transport_service.hpp"
+#include "transport_service.hpp"
 
 // - connect to database
 // - run server
@@ -39,7 +39,7 @@ public:
     search_service::search_service m_search_service;
     ChangePropagator::ChangePropagator m_propagator;
     FileWatcher::FileWatcher m_file_watcher;
-    // transport_service::Server m_server_download;
+    transport_service::Server m_server_download;
 
     DecRep(const std::string &connection_data);
 

@@ -2,14 +2,20 @@
 
 namespace {
 using namespace FileWatcher;
-void printEvent(const FW_Event &e) {
-    auto printPaths = [](const std::vector<std::string>& old_paths,
-                         const std::vector<std::string>& new_paths) {
+
+void printEvent(const FW_Event &e)
+{
+    auto printPaths = [](const std::vector<std::string> &old_paths,
+                         const std::vector<std::string> &new_paths) {
         size_t n = std::max(old_paths.size(), new_paths.size());
         for (size_t i = 0; i < n; ++i) {
             std::cout << "  ";
-            if (i < old_paths.size()) std::cout << "old=" << old_paths[i] << " ";
-            if (i < new_paths.size()) std::cout << "new=" << new_paths[i];
+            if (i < old_paths.size()) {
+                std::cout << "old=" << old_paths[i] << " ";
+            }
+            if (i < new_paths.size()) {
+                std::cout << "new=" << new_paths[i];
+            }
             std::cout << "\n";
         }
     };
@@ -81,7 +87,7 @@ DecRep::DecRep(const std::string &connection_data)
     , m_search_service(m_ioc_search_service)
     , m_propagator(m_event_handler, m_client, m_search_service)
     , m_file_watcher(m_propagator, m_ioc_file_watcher, printEvent)
-// , m_server_download()
+    , m_server_download()
 {
 }
 

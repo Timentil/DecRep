@@ -18,6 +18,8 @@
 #define DEFAULT_COMPRESSION_LEVEL Z_BEST_COMPRESSION
 #define BUFFER_SIZE 8192
 #define DEFAULT_LOG_FILE "transport_service.log"
+// #define HASH
+
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -186,6 +188,9 @@ void send_large_file(
 
 inline unsigned long long get_local_time(const std::string &file_name)
 {
+    if (file_name == "not_name") {
+        return 1;
+    }
     return 0; // TODO Надо походить в БД ручками.
 }
 

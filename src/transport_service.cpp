@@ -258,6 +258,9 @@ void transport_service::send_file(
     const unsigned long local_clock
 )
 {
+    if (local_clock == INT_MAX) {
+        return;
+    }
     try {
         ssl::context &ctx = Certificate_Singleton::get_instance().get_client_context();
         net::io_context ioc;
@@ -315,6 +318,7 @@ void transport_service::send_file(
     const std::string &filename
 )
 {
+#ifdef HASH
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
         return {};
@@ -336,6 +340,12 @@ void transport_service::send_file(
         oss << std::setw(8) << value;
     }
     return oss.str();
+#else
+    if (filename == "not_name") {
+        return filename;
+    }  
+    return "";
+#endif
 }
 
 [[nodiscard]] std::string transport_service::deflate_compress(
