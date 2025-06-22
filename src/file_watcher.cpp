@@ -56,6 +56,45 @@ void FileWatcher::addWatch(const std::string &path)
     }
 }
 
+void FileWatcher::removeWatch(const std::string &path)
+{
+    namespace fs = std::filesystem;
+    const fs::path p{path};
+    const std::string absPath = fs::absolute(p).string();
+
+    if (fs::is_directory(p)) {
+        const std::string prefix = absPath + fs::path::preferred_separator;
+
+        for (auto it = watched_dirs.begin(); it != watched_dirs.end(); ) {
+            const std::string &d = *it;
+            if (d == absPath || d.rfind(prefix, 0) == 0) {
+                watcher_->removeWatch(d);
+                it = watched_dirs.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (auto it = watched_files.begin(); it != watched_files.end(); /* in-loop */) {
+            const std::string &f = *it;
+            if (f.rfind(prefix, 0) == 0) {
+                it = watched_files.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    else if (fs::is_regular_file(p)) {
+        if (watched_files.erase(absPath) > 0) {
+            const std::string dir = fs::absolute(p.parent_path()).string();
+            if (watched_dirs.erase(dir) > 0) {
+                watcher_->removeWatch(dir);
+            }
+        }
+    }
+}
+
 FW_Event::Type FileWatcher::to_Event(const efsw::Action action)
 {
     switch (action) {

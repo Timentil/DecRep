@@ -45,6 +45,7 @@ static FW_Event::Type to_Event(efsw::Action action);
     void run() const;
     
     void addWatch(const std::string &path);
+    void removeWatch(const std::string &path);
     
     // главный метод
     void handleFileAction(
