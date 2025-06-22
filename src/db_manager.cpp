@@ -515,7 +515,7 @@ json::object Manager::get_all_data()
 
     response_json["users"] = fetch_table_data("users");
     response_json["files"] = fetch_table_data("files");
-    response_json["filesowners"] = fetch_table_data("filesowners");
+    response_json["fileowners"] = fetch_table_data("fileowners");
 
     return response_json;
 }
